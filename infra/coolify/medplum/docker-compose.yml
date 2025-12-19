@@ -15,6 +15,7 @@ services:
 
   redis:
     image: redis:7
+    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD:-redis_password}
     volumes:
       - redis_data:/data
 
@@ -28,20 +29,23 @@ services:
     environment:
       MEDPLUM_DATABASE_HOST: postgres
       MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      MEDPLUM_DATABASE_USERNAME: ${POSTGRES_USER:-medplum}
+      MEDPLUM_DATABASE_DBNAME: ${POSTGRES_DB:-medplum}
       MEDPLUM_REDIS_HOST: redis
+      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:-redis_password}
       MEDPLUM_BASE_URL: https://fhir.starvit.ca/
       MEDPLUM_DATABASE_DRIVER: postgres
       NODE_ENV: production
     ports:
       - "8103:8103"
-    command: ["node", "packages/server/dist/index.js"]
+    command: ["node", "packages/server/dist/index.js", "env"]
 
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
     environment:
       MEDPLUM_BASE_URL: https://fhir.starvit.ca/
     ports:
-      - "3000:80"
+      - "3000:3000"
 
 volumes:
   postgres_data:

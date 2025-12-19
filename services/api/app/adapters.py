@@ -21,7 +21,7 @@ class GraphStore(ABC):
 
 class AnalyticsStore(ABC):
     @abstractmethod
-    async def query_cohort(self, cohort_def: Dict[str, Any]) -> pd.DataFrame:
+    async def query_cohort(self, cohort_def: Dict[str, Any]) -> Any:
         pass
 
 # --- Adapters (Implementation) ---

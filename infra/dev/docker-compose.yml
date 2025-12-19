@@ -27,7 +27,7 @@ services:
       NODE_ENV: development
     ports:
       - "8103:8103"
-    command: ["node", "packages/server/dist/index.js"]
+    command: ["node", "packages/server/dist/index.js", "env"]
 
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}

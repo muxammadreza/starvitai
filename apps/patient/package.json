@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
-    "@expo/webpack-config": "19.0.1",
     "@types/react": "~19.2.7",
     "typescript": "5.9.3"
   },
