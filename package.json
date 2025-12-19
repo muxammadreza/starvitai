@@ -9,7 +9,7 @@
   "devDependencies": {
     "minimatch": "^10.1.1",
     "prettier": "^3.7.4",
-    "turbo": "^2.6.3"
+    "turbo": "^2.7.0"
   },
   "engines": {
     "node": ">=22"

@@ -47,8 +47,10 @@ services:
       MEDPLUM_BASE_URL: http://medplum-server:8103/
       MEDPLUM_CLIENT_ID: admin
       MEDPLUM_CLIENT_SECRET: secret
-      # TigerGraph / GraphStore stubs
+       # TigerGraph / GraphStore stubs
       GRAPH_STORE_URL: http://tigergraph:9000
+      GRAPH_STORE_TOKEN: ${GRAPH_STORE_TOKEN}
+      STARVIT_API_KEY: ${STARVIT_API_KEY}
     ports:
       - "8000:8000"
     depends_on:

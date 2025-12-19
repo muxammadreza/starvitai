@@ -19,7 +19,7 @@ class MedplumClient:
         # Real implementation would POST to /fhir/R4/Observation
         # async with httpx.AsyncClient() as client:
         #     return await client.post(...)
-        print(f"STUB: Creating observation in Medplum: {resource}")
+        # print(f"STUB: Creating observation in Medplum: {resource}") # REMOVED for PHI safety
         return {"id": "stub-id", "resourceType": "Observation"}
 
 medplum_client = MedplumClient()

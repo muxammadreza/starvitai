@@ -6,12 +6,12 @@ class Settings(BaseSettings):
     MEDPLUM_CLIENT_SECRET: str
     
     GRAPH_STORE_URL: str
-    GRAPH_STORE_TOKEN: str = "secret"
+    GRAPH_STORE_TOKEN: str
 
     # API Security
     STARVIT_API_KEY: str
 
-    ANALYTICS_STORE_URL: str = "postgresql://user:password@localhost:5432/starvit_analytics"
+    ANALYTICS_STORE_URL: str
     
     class Config:
         env_file = ".env"
