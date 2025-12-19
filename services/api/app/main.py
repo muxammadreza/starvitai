@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
-from app.clients.tigergraph import tigergraph_client
+from app.adapters import graph_store
 
 app = FastAPI(title="Starvit API")
 
@@ -35,6 +35,6 @@ class GraphQuerySync(BaseModel):
     params: dict
 
 @app.post("/api/research/graph/query")
-def query_graph(q: GraphQuerySync):
+async def query_graph(q: GraphQuerySync):
     # Enforce allowlist check here in real implementation
-    return tigergraph_client.execute_query(q.query, q.params)
+    return await graph_store.execute_query(q.query, q.params)

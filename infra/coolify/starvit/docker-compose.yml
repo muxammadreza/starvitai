@@ -4,28 +4,27 @@ services:
       context: ../../..
       dockerfile: services/api/Dockerfile
     environment:
-      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL}
+      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:-https://fhir.starvit.ca/}
       MEDPLUM_CLIENT_ID: ${MEDPLUM_CLIENT_ID}
       MEDPLUM_CLIENT_SECRET: ${MEDPLUM_CLIENT_SECRET}
-      TIGERGRAPH_URL: ${TIGERGRAPH_URL}
-      TIGERGRAPH_TOKEN: ${TIGERGRAPH_TOKEN}
-    expose:
-      - 8000
+      GRAPH_STORE_URL: ${GRAPH_STORE_URL}
+    ports:
+      - "8000:8000"
 
   clinician:
     build:
       context: ../../..
       dockerfile: apps/clinician/Dockerfile
-    environment:
-      NEXT_PUBLIC_API_URL: ${STARVIT_API_PUBLIC_URL}
-    expose:
-      - 3000
+      args:
+        NEXT_PUBLIC_API_URL: https://api.starvit.ca
+    ports:
+      - "3001:3000"
 
   research:
     build:
       context: ../../..
       dockerfile: apps/research/Dockerfile
-    environment:
-      NEXT_PUBLIC_API_URL: ${STARVIT_API_PUBLIC_URL}
-    expose:
-      - 3000
+      args:
+        NEXT_PUBLIC_API_URL: https://api.starvit.ca
+    ports:
+      - "3002:3000"

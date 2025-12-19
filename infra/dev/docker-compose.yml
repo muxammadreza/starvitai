@@ -19,11 +19,11 @@ services:
       - postgres
       - redis
     environment:
-      MEDPLUM_Database__Host: postgres
-      MEDPLUM_Database__Password: password
-      MEDPLUM_Redis__Host: redis
-      MEDPLUM_BaseUrl: http://localhost:8103
-      MEDPLUM_Database__Driver: postgres
+      MEDPLUM_DATABASE_HOST: postgres
+      MEDPLUM_DATABASE_PASSWORD: password
+      MEDPLUM_REDIS_HOST: redis
+      MEDPLUM_BASE_URL: http://localhost:8103/
+      MEDPLUM_DATABASE_DRIVER: postgres
       NODE_ENV: development
     ports:
       - "8103:8103"
@@ -32,7 +32,7 @@ services:
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
     environment:
-      MEDPLUM_BASE_URL: http://localhost:8103
+      MEDPLUM_BASE_URL: http://localhost:8103/
     ports:
       - "3000:3000"
 
@@ -41,9 +41,11 @@ services:
       context: ../..
       dockerfile: services/api/Dockerfile
     environment:
-      MEDPLUM_BASE_URL: http://medplum-server:8103
+      MEDPLUM_BASE_URL: http://medplum-server:8103/
       MEDPLUM_CLIENT_ID: admin
       MEDPLUM_CLIENT_SECRET: secret
+      # TigerGraph / GraphStore stubs
+      GRAPH_STORE_URL: http://tigergraph:9000
     ports:
       - "8000:8000"
     depends_on:

@@ -1,4 +1,4 @@
-from app.clients.medplum import medplum_client
+from app.adapters import fhir_store
 
 async def write_observation_glucose_ketone_weight(patient_id: str, data: dict):
     # Construct FHIR Observation
@@ -22,4 +22,4 @@ async def write_observation_glucose_ketone_weight(patient_id: str, data: dict):
              "valueQuantity": {"value": float(data['glucose']), "unit": "mmol/L"}
          })
          
-    return await medplum_client.create_observation(observation)
+    return await fhir_store.create_resource("Observation", observation)

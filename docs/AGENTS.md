@@ -165,7 +165,7 @@ But must prefer **read-only** queries unless explicitly told otherwise.
 
 ## 8) Coding rules (how agents must write code here)
 1) TypeScript for web apps + shared packages.
-2) Python for ML + analytics + FastAPI backend.
+2) Python 3.13 for ML + analytics + FastAPI backend.
 3) Every feature must include:
    - tests (unit at minimum)
    - logging (structured)
@@ -173,6 +173,7 @@ But must prefer **read-only** queries unless explicitly told otherwise.
 4) No direct DB calls from frontends (ever).
 5) Feature flags for anything patient-impacting.
 6) Migrations must be reversible.
+7) Use Poetry for Python dependency management.
 
 ---
 

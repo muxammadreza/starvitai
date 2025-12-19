@@ -1,51 +1,48 @@
 services:
   postgres:
-    image: postgres:15
-    restart: always
+    image: postgres:16
     environment:
-      POSTGRES_USER: medplum
-      POSTGRES_PASSWORD: ${MEDPLUM_DATABASE_PASSWORD}
-      POSTGRES_DB: ${MEDPLUM_DATABASE_DBNAME:-medplum}
+      POSTGRES_USER: ${POSTGRES_USER:-medplum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-medplum}
     volumes:
-      - medplum_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medplum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
-    restart: always
-    command: redis-server --requirepass "${MEDPLUM_REDIS_PASSWORD}"
     volumes:
-      - medplum_redis_data:/data
+      - redis_data:/data
 
   medplum-server:
     image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
-    restart: always
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
-      MEDPLUM_Database__Host: postgres
-      MEDPLUM_Database__Port: 5432
-      MEDPLUM_Database__Database: ${MEDPLUM_DATABASE_DBNAME:-medplum}
-      MEDPLUM_Database__Username: medplum
-      MEDPLUM_Database__Password: ${MEDPLUM_DATABASE_PASSWORD}
-      MEDPLUM_Redis__Host: redis
-      MEDPLUM_Redis__Port: 6379
-      MEDPLUM_Redis__Password: ${MEDPLUM_REDIS_PASSWORD}
-      MEDPLUM_BaseUrl: ${MEDPLUM_BASE_URL}
-      MEDPLUM_Database__Driver: postgres
+      MEDPLUM_DATABASE_HOST: postgres
+      MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      MEDPLUM_REDIS_HOST: redis
+      MEDPLUM_BASE_URL: https://fhir.starvit.ca/
+      MEDPLUM_DATABASE_DRIVER: postgres
       NODE_ENV: production
-    expose:
-      - 8103
+    ports:
+      - "8103:8103"
     command: ["node", "packages/server/dist/index.js"]
 
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
-    restart: always
     environment:
-      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL}
-    expose:
-      - 3000
+      MEDPLUM_BASE_URL: https://fhir.starvit.ca/
+    ports:
+      - "3000:80"
 
 volumes:
-  medplum_postgres_data:
-  medplum_redis_data:
+  postgres_data:
+  redis_data:
