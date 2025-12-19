@@ -34,6 +34,9 @@ services:
       MEDPLUM_REDIS_HOST: redis
       MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:-redis_password}
       MEDPLUM_BASE_URL: https://fhir.starvit.ca/
+      MEDPLUM_APP_BASE_URL: https://admin.starvit.ca/
+      MEDPLUM_STORAGE_BASE_URL: https://fhir.starvit.ca/storage/
+      MEDPLUM_BINARY_STORAGE: file:/var/lib/medplum/binary
       MEDPLUM_DATABASE_DRIVER: postgres
       NODE_ENV: production
     ports:

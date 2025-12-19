@@ -3,7 +3,23 @@ from pydantic import BaseModel
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 from app.adapters import graph_store
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Starvit API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "https://admin.starvit.ca",
+        "https://app.starvit.ca",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 def health_check():
