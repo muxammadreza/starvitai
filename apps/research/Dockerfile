@@ -6,5 +6,5 @@ COPY . .
 RUN pnpm install
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm --filter @starvit/research build
+RUN pnpm turbo run build --filter=@starvit/research...
 CMD ["pnpm", "--filter", "@starvit/research", "start"]

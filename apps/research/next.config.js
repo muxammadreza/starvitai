@@ -5,21 +5,16 @@ module.exports = {
     resolveAlias: {
       "react-native": "react-native-web",
     },
-  },
-  experimental: {
-  },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      "react-native$": "react-native-web",
-    };
-    config.resolve.extensions = [
-      ".web.js",
-      ".web.jsx",
-      ".web.ts",
+    resolveExtensions: [
       ".web.tsx",
-      ...config.resolve.extensions,
-    ];
-    return config;
+      ".web.ts",
+      ".web.jsx",
+      ".web.js",
+      ".tsx",
+      ".ts",
+      ".jsx",
+      ".js",
+      ".json",
+    ],
   },
 };
