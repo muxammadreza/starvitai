@@ -14,6 +14,6 @@
   "engines": {
     "node": ">=22"
   },
-  "name": "with-react-native-web",
+  "name": "@starvit/monorepo",
   "packageManager": "pnpm@10.26.0"
 }

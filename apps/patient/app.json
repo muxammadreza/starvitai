@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "native",
-    "slug": "native",
+    "name": "patient",
+    "slug": "patient",
     "version": "1.0.0",
-    "scheme": "com.turbo.example",
+    "scheme": "com.starvit.patient",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.turbo.example"
+      "package": "com.starvit.patient"
     },
     "web": {
       "favicon": "./assets/favicon.png",

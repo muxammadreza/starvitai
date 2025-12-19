@@ -23,6 +23,12 @@
     "@starvit/api-client": "workspace:*"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.17.0",
+    "@next/eslint-plugin-next": "16.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
     "@starvit/typescript-config": "workspace:*",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.7",

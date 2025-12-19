@@ -15,9 +15,14 @@ services:
 
   redis:
     image: redis:7
-    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD:-redis_password}
+    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${MEDPLUM_REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   medplum-server:
     image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
@@ -26,22 +31,29 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - medplum_binary:/var/lib/medplum/binary
     environment:
       MEDPLUM_DATABASE_HOST: postgres
       MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       MEDPLUM_DATABASE_USERNAME: ${POSTGRES_USER:-medplum}
       MEDPLUM_DATABASE_DBNAME: ${POSTGRES_DB:-medplum}
       MEDPLUM_REDIS_HOST: redis
-      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:-redis_password}
+      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD}
       MEDPLUM_BASE_URL: https://fhir.starvit.ca/
       MEDPLUM_APP_BASE_URL: https://admin.starvit.ca/
       MEDPLUM_STORAGE_BASE_URL: https://fhir.starvit.ca/storage/
-      MEDPLUM_BINARY_STORAGE: file:/var/lib/medplum/binary
+      MEDPLUM_BINARY_STORAGE: file:/var/lib/medplum/binary/
       MEDPLUM_DATABASE_DRIVER: postgres
       NODE_ENV: production
     ports:
       - "8103:8103"
     command: ["node", "packages/server/dist/index.js", "env"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8103/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
@@ -53,3 +65,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  medplum_binary:

@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from app.core.config import settings
 from pydantic import BaseModel
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 from app.adapters import graph_store
@@ -20,6 +21,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next):
+    # Skip auth for health check
+    if request.url.path == "/health":
+        return await call_next(request)
+        
+    api_key = request.headers.get("X-API-KEY")
+    if not api_key or api_key != settings.STARVIT_API_KEY:
+        from fastapi import Response
+        return Response(content="Unauthorized", status_code=401)
+        
+    return await call_next(request)
 
 @app.get("/health")
 def health_check():
