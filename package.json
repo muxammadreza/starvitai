@@ -12,7 +12,7 @@
     "turbo": "^2.6.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "name": "with-react-native-web",
   "packageManager": "pnpm@10.26.0"

@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: medplum
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: medplum
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  medplum-server:
+    image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      MEDPLUM_Database__Host: postgres
+      MEDPLUM_Database__Password: password
+      MEDPLUM_Redis__Host: redis
+      MEDPLUM_BaseUrl: http://localhost:8103
+      MEDPLUM_Database__Driver: postgres
+      NODE_ENV: development
+    ports:
+      - "8103:8103"
+    command: ["node", "packages/server/dist/index.js"]
+
+  medplum-app:
+    image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
+    environment:
+      MEDPLUM_BASE_URL: http://localhost:8103
+    ports:
+      - "3000:3000"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: services/api/Dockerfile
+    environment:
+      MEDPLUM_BASE_URL: http://medplum-server:8103
+      MEDPLUM_CLIENT_ID: admin
+      MEDPLUM_CLIENT_SECRET: secret
+    ports:
+      - "8000:8000"
+    depends_on:
+      - medplum-server

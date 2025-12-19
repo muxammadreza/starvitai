@@ -1,0 +1,16 @@
+[project]
+name = "starvit-api"
+version = "0.1.0"
+description = "Starvit Backend API"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv"
+]
+requires-python = ">=3.13"
+
+[tool.setuptools]
+packages = ["app"]

@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: medplum
+      POSTGRES_PASSWORD: ${MEDPLUM_DATABASE_PASSWORD}
+      POSTGRES_DB: ${MEDPLUM_DATABASE_DBNAME:-medplum}
+    volumes:
+      - medplum_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: always
+    command: redis-server --requirepass "${MEDPLUM_REDIS_PASSWORD}"
+    volumes:
+      - medplum_redis_data:/data
+
+  medplum-server:
+    image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      MEDPLUM_Database__Host: postgres
+      MEDPLUM_Database__Port: 5432
+      MEDPLUM_Database__Database: ${MEDPLUM_DATABASE_DBNAME:-medplum}
+      MEDPLUM_Database__Username: medplum
+      MEDPLUM_Database__Password: ${MEDPLUM_DATABASE_PASSWORD}
+      MEDPLUM_Redis__Host: redis
+      MEDPLUM_Redis__Port: 6379
+      MEDPLUM_Redis__Password: ${MEDPLUM_REDIS_PASSWORD}
+      MEDPLUM_BaseUrl: ${MEDPLUM_BASE_URL}
+      MEDPLUM_Database__Driver: postgres
+      NODE_ENV: production
+    expose:
+      - 8103
+    command: ["node", "packages/server/dist/index.js"]
+
+  medplum-app:
+    image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
+    restart: always
+    environment:
+      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL}
+    expose:
+      - 3000
+
+volumes:
+  medplum_postgres_data:
+  medplum_redis_data:
