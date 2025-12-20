@@ -3,7 +3,7 @@ services:
     image: postgres:16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-medplum}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-medplum}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -15,7 +15,7 @@ services:
 
   redis:
     image: redis:7
-    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD}
+    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD:?MEDPLUM_REDIS_PASSWORD is required}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,11 +35,11 @@ services:
       - medplum_binary:/var/lib/medplum/binary
     environment:
       MEDPLUM_DATABASE_HOST: postgres
-      MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       MEDPLUM_DATABASE_USERNAME: ${POSTGRES_USER:-medplum}
       MEDPLUM_DATABASE_DBNAME: ${POSTGRES_DB:-medplum}
       MEDPLUM_REDIS_HOST: redis
-      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD}
+      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:?MEDPLUM_REDIS_PASSWORD is required}
       MEDPLUM_BASE_URL: https://fhir.starvit.ca/
       MEDPLUM_APP_BASE_URL: https://admin.starvit.ca/
       MEDPLUM_STORAGE_BASE_URL: https://fhir.starvit.ca/storage/

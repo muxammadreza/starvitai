@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Request
 from app.core.config import settings
+from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from pydantic import BaseModel
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 from app.adapters import graph_store
@@ -34,15 +35,29 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
-        # Fetch Medplum's public keys
-        jwks_client = jwt.PyJWKClient(f"{settings.MEDPLUM_BASE_URL}.well-known/jwks.json")
+        # 1. Fetch Medplum's public keys
+        # Ensure trailing slash logic for JWKS URL construction
+        base_url = settings.MEDPLUM_BASE_URL
+        if not base_url.endswith("/"):
+            base_url += "/"
+        jwks_url = f"{base_url}.well-known/jwks.json"
+        
+        jwks_client = jwt.PyJWKClient(jwks_url)
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
+        # 2. Decode with strict validation
+        # We enforce that 'iss' claim matches our MEDPLUM_BASE_URL exactly.
+        # Note: If Medplum issues tokens with a different string, this will fail 401.
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            options={"verify_exp": True} # Default, but explicit
+            options={
+                "verify_exp": True,
+                "verify_iss": True, 
+                "require": ["exp", "iss"],
+            },
+            issuer=base_url  # Must match exactly
         )
         return payload
     except Exception as e:
@@ -66,6 +81,26 @@ async def auth_middleware(request: Request, call_next):
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+# Internal / Admin Security
+api_key_header = APIKeyHeader(name="X-Starvit-API-Key", auto_error=True)
+
+def verify_internal_api_key(api_key: str = Security(api_key_header)):
+    """
+    Verifies the internal service API key.
+    Used for admin ops or internal service-to-service calls that are not user-scoped.
+    """
+    if api_key != settings.STARVIT_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    return api_key
+
+@app.get("/api/admin/config", dependencies=[Depends(verify_internal_api_key)])
+def get_admin_config():
+    """
+    Example internal-only endpoint protected by STARVIT_API_KEY.
+    """
+    return {"status": "secure_admin_access_granted"}
+
 
 # Patient Endpoints
 class MeasurementInput(BaseModel):
