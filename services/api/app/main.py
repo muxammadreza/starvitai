@@ -15,12 +15,12 @@ app.add_middleware(
         "http://localhost:3001",
         "http://localhost:3002",
         "https://admin.starvit.ca",
+        "https://clinician.starvit.ca",
+        "https://research.starvit.ca",
         "https://app.starvit.ca",
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-)
     allow_headers=["*"],
 )
 
@@ -34,11 +34,19 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
-        # MVP: Decode without signature verification for now (trusting internal gateway/LB or just parsing)
-        # TODO: Implement full JWKS signature verification against Medplum's public keys
-        payload = jwt.decode(token, options={"verify_signature": False})
+        # Fetch Medplum's public keys
+        jwks_client = jwt.PyJWKClient(f"{settings.MEDPLUM_BASE_URL}.well-known/jwks.json")
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={"verify_exp": True} # Default, but explicit
+        )
         return payload
     except Exception as e:
+        print(f"Auth Error: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.middleware("http")
@@ -84,7 +92,16 @@ class GraphQuerySync(BaseModel):
     query: str
     params: dict
 
+ALLOWED_GRAPH_QUERIES = {
+    "get_patient_subgraph",
+    "find_similar_patients", 
+    "recommend_protocol_adjustments"
+}
+
 @app.post("/api/research/graph/query")
 async def query_graph(q: GraphQuerySync, user: dict = Depends(get_current_user)):
+    if q.query not in ALLOWED_GRAPH_QUERIES:
+         raise HTTPException(status_code=403, detail=f"Query '{q.query}' is not allowlisted.")
+         
     # Enforce allowlist check here in real implementation
     return await graph_store.execute_query(q.query, q.params)

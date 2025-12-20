@@ -3,5 +3,10 @@
     {
       "mode": "auto"
     }
-  ]
+  ],
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/services/api"
+  ],
+  "python.terminal.activateEnvironment": true,
+  "python.pyrefly.displayTypeErrors": "force-on"
 }

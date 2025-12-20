@@ -42,9 +42,10 @@ This spins up:
 1. **Deploy Medplum Stack**:
    - Use `infra/coolify/medplum/docker-compose.yml`.
    - Configure secrets in Coolify.
-   - Domain: `fhir.starvit.ca` (8103), `medplum.starvit.ca` (3000).
+   - Domain: `fhir.starvit.ca` (8103), `admin.starvit.ca` (3000).
 
 2. **Deploy Starvit Stack**:
    - Use `infra/coolify/starvit/docker-compose.yml`.
    - Connects to Medplum via URL.
    - Domain: `api.starvit.ca` (8000), `clinician.starvit.ca` (3000), `research.starvit.ca` (3000, assign distinct domain/port mappings in Coolify).
+   - Patient App: `app.starvit.ca` (hosted via Expo or web build).

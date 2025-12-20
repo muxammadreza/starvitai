@@ -50,7 +50,7 @@ services:
       - "8103:8103"
     command: ["node", "packages/server/dist/index.js", "env"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8103/health"]
+      test: ["CMD-SHELL", "node -e 'require(\"http\").get(\"http://localhost:8103/health\", (res) => { if (res.statusCode !== 200) { console.error(\"Health check failed: \" + res.statusCode); process.exit(1); } })'"]
       interval: 10s
       timeout: 5s
       retries: 5
