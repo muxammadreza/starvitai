@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
+import { fixupPluginRules } from "@eslint/compat";
 import path from "path";
 import { fileURLToPath } from "url";
 import globals from "globals";
@@ -26,8 +27,8 @@ export default [
         files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
         plugins: {
             "react": reactPlugin,
-            "react-hooks": hooksPlugin,
-            "@next/next": nextPlugin,
+            "react-hooks": fixupPluginRules(hooksPlugin),
+            "@next/next": fixupPluginRules(nextPlugin),
         },
         rules: {
             ...reactPlugin.configs.recommended.rules,
@@ -49,3 +50,4 @@ export default [
         }
     }
 ];
+

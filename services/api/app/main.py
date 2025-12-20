@@ -44,13 +44,13 @@ ALLOWED_ORIGINS_DEV = [
     "http://localhost:3002",
 ]
 ALLOWED_ORIGINS_STAGING = [
-    "https://admin-staging.starvit.ca",
+    "https://medplum-staging.starvit.ca",
     "https://clinician-staging.starvit.ca",
     "https://research-staging.starvit.ca",
     "https://fhir-staging.starvit.ca", 
 ]
 ALLOWED_ORIGINS_PROD = [
-    "https://admin.starvit.ca",
+    "https://medplum.starvit.ca",
     "https://clinician.starvit.ca",
     "https://research.starvit.ca",
     "https://app.starvit.ca",
@@ -131,11 +131,12 @@ async def post_measurements(data: MeasurementInput, user: dict = Depends(validat
         
         # Force the ID to match the token
         patient_id = token_patient_id
-        logger.info(f"Binding write for {patient_id} derived from token")
+        logger.info(f"Binding write for patient derived from token")
 
     result = await write_observation_glucose_ketone_weight(
         patient_id, 
-        data.model_dump(exclude_none=True)
+        data.model_dump(exclude_none=True),
+        token=user.get("_token")
     )
     return {"status": "received", "fhir_id": result.get("id"), "mode": settings.STARVIT_MODE}
 

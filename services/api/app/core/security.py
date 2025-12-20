@@ -55,6 +55,7 @@ def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
             issuer=settings.MEDPLUM_JWT_ISSUER,
             audience=settings.MEDPLUM_JWT_AUDIENCE,
         )
+        payload["_token"] = token
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

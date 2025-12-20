@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
+import httpx
 from app.core.config import settings
 
 logger = logging.getLogger("starvit-adapters")
@@ -9,11 +10,11 @@ logger = logging.getLogger("starvit-adapters")
 
 class FhirStore(ABC):
     @abstractmethod
-    async def create_resource(self, resource_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_resource(self, resource_type: str, data: Dict[str, Any], token: Optional[str] = None) -> Dict[str, Any]:
         pass
 
     @abstractmethod
-    async def search_resources(self, resource_type: str, search_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def search_resources(self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None) -> List[Dict[str, Any]]:
         pass
 
 class GraphStore(ABC):
@@ -54,22 +55,49 @@ class MedplumStore(FhirStore):
         
         raise NotImplementedError("Medplum live auth not implemented")
 
-    async def create_resource(self, resource_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_resource(self, resource_type: str, data: Dict[str, Any], token: Optional[str] = None) -> Dict[str, Any]:
         if settings.STARVIT_MODE == "stub":
              logger.info(f"[MedplumStore STUB] POST {resource_type}") # No PHI in logs
              return {"id": "stub-id", "resourceType": resource_type, **data, "mode": "stub"}
         
-        # token = await self._get_token() # This will raise if secret missing
+        if not token:
+             raise NotImplementedError("Medplum live write requires user token")
+             
         url = f"{self.base_url}/fhir/R4/{resource_type}"
-        raise NotImplementedError("Medplum live create_resource not implemented")
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/fhir+json"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.post(url, json=data, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Medplum error: {e.response.text}")
+                raise
 
-    async def search_resources(self, resource_type: str, search_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def search_resources(self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None) -> List[Dict[str, Any]]:
         if settings.STARVIT_MODE == "stub":
             logger.info(f"[MedplumStore STUB] GET {resource_type}")
             return [{"resourceType": resource_type, "id": "stub-search", "mode": "stub"}]
 
+        if not token:
+             raise NotImplementedError("Medplum live search requires user token")
+
         url = f"{self.base_url}/fhir/R4/{resource_type}"
-        raise NotImplementedError("Medplum live search_resources not implemented")
+        headers = {
+             "Authorization": f"Bearer {token}",
+             "Content-Type": "application/fhir+json"
+        }
+        async with httpx.AsyncClient() as client:
+             resp = await client.get(url, params=search_params, headers=headers)
+             resp.raise_for_status()
+             data = resp.json()
+             if "entry" in data:
+                 return [e["resource"] for e in data["entry"]]
+             return []
 
 class TigerGraphStore(GraphStore):
     def __init__(self):

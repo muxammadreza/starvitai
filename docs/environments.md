@@ -9,7 +9,7 @@ This project follows the **12-Factor App** methodology: config is stored in the 
 | `APP_ENV` | `dev` | `staging` | `prod` |
 | `STARVIT_MODE` | `stub` (default) or `live` | `live` | `live` |
 | `MEDPLUM_BASE_URL` | `http://localhost:8103/` | `https://fhir-staging.starvit.ca/` | `https://fhir.starvit.ca/` |
-| `MEDPLUM_APP_BASE_URL` | `http://localhost:3000/` | `https://admin-staging.starvit.ca/` | `https://admin.starvit.ca/` |
+| `MEDPLUM_APP_BASE_URL` | `http://localhost:3000/` | `https://medplum-staging.starvit.ca/` | `https://medplum.starvit.ca/` |
 | `MEDPLUM_STORAGE_BASE_URL` | `http://localhost:8103/storage/` | `https://fhir-staging.starvit.ca/storage/` | `https://fhir.starvit.ca/storage/` |
 | `MEDPLUM_JWT_ISSUER` | `http://localhost:8103/` | `https://fhir-staging.starvit.ca/` | `https://fhir.starvit.ca/` |
 | `MEDPLUM_JWT_AUDIENCE` | `http://localhost:8103/` | `https://fhir-staging.starvit.ca/` | `https://fhir.starvit.ca/` |

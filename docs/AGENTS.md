@@ -1,3 +1,10 @@
+In addition to this document, you must also follow the rules in .agent/rules/*.md documents.
+You can also find other useful info in docs/*.md files.
+
+
+---
+
+
 # Starvit — Antigravity Agent Rules (Authoritative)
 
 ## 0) Prime Directive (non-negotiable)

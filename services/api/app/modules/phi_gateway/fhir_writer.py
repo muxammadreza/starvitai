@@ -1,6 +1,7 @@
 from app.adapters import fhir_store
 
-async def write_observation_glucose_ketone_weight(patient_id: str, data: dict):
+from typing import Optional
+async def write_observation_glucose_ketone_weight(patient_id: str, data: dict, token: Optional[str] = None):
     # Construct FHIR Observation
     observation = {
         "resourceType": "Observation",
@@ -44,4 +45,4 @@ async def write_observation_glucose_ketone_weight(patient_id: str, data: dict):
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="No valid measurements provided")
         
-    return await fhir_store.create_resource("Observation", observation)
+    return await fhir_store.create_resource("Observation", observation, token=token)
