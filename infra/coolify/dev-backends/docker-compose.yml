@@ -1,0 +1,100 @@
+services:
+  medplum-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medplum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-medplum}
+    volumes:
+      - medplum_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medplum}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+    restart: always
+
+  medplum-redis:
+    image: redis:7
+    command: redis-server --requirepass ${MEDPLUM_REDIS_PASSWORD:?MEDPLUM_REDIS_PASSWORD is required}
+    volumes:
+      - medplum_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${MEDPLUM_REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+    restart: always
+
+  medplum-server:
+    image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
+    depends_on:
+      medplum-postgres:
+        condition: service_healthy
+      medplum-redis:
+        condition: service_healthy
+    volumes:
+      - medplum_binary_storage:/var/lib/medplum/binary
+    environment:
+      MEDPLUM_DATABASE_HOST: medplum-postgres
+      MEDPLUM_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      MEDPLUM_DATABASE_USERNAME: ${POSTGRES_USER:-medplum}
+      MEDPLUM_DATABASE_DBNAME: ${POSTGRES_DB:-medplum}
+      MEDPLUM_REDIS_HOST: medplum-redis
+      MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:?MEDPLUM_REDIS_PASSWORD is required}
+      
+      # Coolify Domain Routing will handle SSL termination and exposure
+      # We expose internally on 8103
+      
+      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:?MEDPLUM_BASE_URL is required}
+      MEDPLUM_APP_BASE_URL: ${MEDPLUM_APP_BASE_URL:?MEDPLUM_APP_BASE_URL is required}
+      MEDPLUM_STORAGE_BASE_URL: ${MEDPLUM_STORAGE_BASE_URL:?MEDPLUM_STORAGE_BASE_URL is required}
+      
+      MEDPLUM_BINARY_STORAGE: file:/var/lib/medplum/binary/
+      MEDPLUM_DATABASE_DRIVER: postgres
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'require(\"http\").get(\"http://localhost:8103/health\", (res) => { if (res.statusCode !== 200) { console.error(\"Health check failed: \" + res.statusCode); process.exit(1); } })'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+    restart: always
+    # No ports exposed to host, Coolify handles routing via container network
+
+  medplum-app:
+    image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
+    environment:
+      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:?MEDPLUM_BASE_URL is required}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    init: true
+    restart: always
+    # No ports exposed to host, Coolify handles routing via container network
+
+  analytics-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${ANALYTICS_USER:-analytics}
+      POSTGRES_PASSWORD: ${ANALYTICS_PASSWORD:?ANALYTICS_PASSWORD is required}
+      POSTGRES_DB: ${ANALYTICS_DB:-analytics}
+    volumes:
+      - analytics_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ANALYTICS_USER:-analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+    restart: always
+
+volumes:
+  medplum_postgres_data:
+  medplum_redis_data:
+  medplum_binary_storage:
+  analytics_postgres_data:

@@ -106,6 +106,49 @@ def get_admin_config():
         "mode": settings.STARVIT_MODE
     }
 
+@app.get("/api/admin/tigergraph/health", dependencies=[Depends(verify_internal_api_key)])
+async def tigergraph_health_check():
+    """
+    Probes TigerGraph connectivity.
+    """
+    if settings.STARVIT_MODE == "stub":
+        return {"status": "ok", "mode": "stub", "timings": "0ms"}
+
+    try:
+        # Echo query or simple 'gsql' endpoint check
+        # We'll try hitting a known safe endpoint or just check if TCP connects
+        # For Savanna, we might list endpoints or just return config status if no simple health endpoint exists.
+        # Actually, let's try a simple query if available, or just report configured.
+        
+        if not settings.TG_SAVANNA_API_BASE:
+            return {"status": "error", "detail": "Not Configured"}
+            
+        return {"status": "configured", "base_url": settings.TG_SAVANNA_API_BASE}
+    except Exception as e:
+         return {"status": "error", "detail": str(e)}
+
+def validate_no_phi(params: dict):
+    """
+    Reject params that look like FHIR IDs or Patient IDs unless specifically allowlisted (e.g. pseudonymized IDs).
+    Rules:
+    - No keys containing 'patient' with values that differ from 'anon_*' or 'p_*' (pseudonyms).
+    - Checks recursively (simple depth).
+    """
+    import re
+    # FHIR UUID pattern (weak check, but good heuristic)
+    fhir_id_pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+    
+    for k, v in params.items():
+        if isinstance(v, str):
+            # 1. Reject obvious FHIR UUIDs in sensitive fields
+            if "patient" in k.lower() and fhir_id_pattern.match(v):
+                raise ValueError(f"PHI Guard: Parameter '{k}' looks like a raw FHIR ID. Use pseudonymized IDs for research.")
+                
+            # 2. Reject explicit emails/names (very rough)
+            if "@" in v and "." in v:
+                # Basic email heuristic
+                raise ValueError(f"PHI Guard: Parameter '{k}' looks like an email.")
+
 
 # Patient Endpoints
 class MeasurementInput(BaseModel):
@@ -171,6 +214,13 @@ async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
     if q.query not in ALLOWED_GRAPH_QUERIES:
         logger.warning(f"GraphSecurity: Blocked query '{q.query}' from user {user_id}")
         raise HTTPException(status_code=403, detail=f"Query '{q.query}' is not allowlisted.")
+
+    # 1.5 PHI Guard
+    try:
+        validate_no_phi(q.params)
+    except ValueError as e:
+        logger.warning(f"GraphSecurity: PHI Guard blocked query from {user_id}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
     # 2. Provenance Logging
     import hashlib

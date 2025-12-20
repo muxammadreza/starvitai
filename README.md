@@ -10,6 +10,14 @@ Clinical-grade platform for metabolic therapy support.
 - Docker & Docker Compose
 - Python 3.13+ (for backend local dev without Docker)
 
+### Remote Development (Recommended)
+We recommend running backing services on our shared Coolify dev environment to mimic production closer and save local resources.
+See [docs/remote-dev-backends.md](docs/remote-dev-backends.md) for full setup instructions.
+
+Quickstart:
+1. Ensure `dev-remote` environment is active in Coolify.
+2. Configure local apps to point to remote services (see below).
+
 ### 1. Start Infrastructure (Medplum + DBs)
 Spins up Medplum Server, App, Postgres, and Redis locally.
 ```bash

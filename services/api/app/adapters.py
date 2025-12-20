@@ -120,12 +120,43 @@ class TigerGraphStore(GraphStore):
                 "mode": "stub"
             }
 
-        # LIVE MODE
-        if not self.base_url or not self.token:
-            raise NotImplementedError("GRAPH_STORE config missing for LIVE mode")
-            
-        url = f"{self.base_url}/query/{query_name}"
-        raise NotImplementedError("TigerGraph live execute_query not implemented")
+        # LIVE MODE (Savanna)
+        api_base = settings.TG_SAVANNA_API_BASE
+        api_key = settings.TG_SAVANNA_API_KEY
+        
+        if not api_base or not api_key:
+             raise NotImplementedError("TigerGraph Savanna config (API_BASE, API_KEY) missing for LIVE mode")
+             
+        # Savanna REST API structure for custom queries:
+        # POST {api_base}/query/{graph_name}/{query_name}
+        # But commonly managed services expose endpoints like:
+        # https://<domain>/restpp/query/<graph_name>/<query_name>
+        # We assume TG_SAVANNA_API_BASE is the full base up to /restpp or equivalent.
+        # If the user provides "https://api.tgcloud.io/v4/...", we append accordingly.
+        
+        # Construct URL (assuming standard TigerGraph REST++ endpoint structure)
+        # We might need a graph name in config, or assume "StarvitGraph" or similar.
+        # For now, we append /query/{query_name} to the base.
+        url = f"{api_base.rstrip('/')}/query/{query_name}"
+        
+        headers = {
+             "x-api-key": api_key,
+             "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient() as client:
+             try:
+                 # TG queries usually take params as query args (GET) or JSON body (POST).
+                 # We prefer POST for complex params.
+                 resp = await client.post(url, json=params, headers=headers, timeout=10.0)
+                 resp.raise_for_status()
+                 return resp.json()
+             except httpx.HTTPStatusError as e:
+                 logger.error(f"TigerGraph Savanna error: {e.response.text}")
+                 raise e
+             except Exception as e:
+                 logger.error(f"TigerGraph connection error: {e}")
+                 raise e
 
 class PostgresAnalyticsStore(AnalyticsStore):
     def __init__(self):

@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     GRAPH_STORE_TOKEN: Optional[str] = None
     ANALYTICS_STORE_URL: Optional[str] = None
     
+    # TigerGraph Savanna (Managed)
+    TG_SAVANNA_API_BASE: Optional[str] = None
+    TG_SAVANNA_API_KEY: Optional[str] = None
+    TG_SAVANNA_WORKGROUP_ID: Optional[str] = None
+    
     # Internal Security
     STARVIT_API_KEY: Optional[str] = None # Only for internal service-to-service
 
