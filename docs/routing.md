@@ -4,7 +4,7 @@
 
 | Service | Dev (Local) | Staging | Production |
 |---------|-------------|---------|------------|
-| **Clinician UI** | `localhost:3000` | `admin-staging.starvit.ca` | `admin.starvit.ca` |
+| **Clinician UI** | `localhost:3001` | `admin-staging.starvit.ca` | `admin.starvit.ca` |
 | **Research UI** | `localhost:3002` | `research-staging.starvit.ca` | `research.starvit.ca` |
 | **Patient App** | (Expo) | `app-staging.starvit.ca` | `app.starvit.ca` |
 | **API** | `localhost:8000` | `api-staging.starvit.ca` | `api.starvit.ca` |

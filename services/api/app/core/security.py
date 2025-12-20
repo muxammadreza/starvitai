@@ -3,6 +3,25 @@ from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import settings
 
+import logging
+
+logger = logging.getLogger("starvit-auth")
+
+# Global JWK Client to avoid re-fetching on every request
+_jwks_client = None
+
+def get_jwks_client():
+    global _jwks_client
+    if _jwks_client is None:
+        jwks_url = settings.MEDPLUM_JWKS_URL
+        if not jwks_url:
+            base = settings.MEDPLUM_BASE_URL
+            if not base.endswith("/"):
+                base += "/"
+            jwks_url = f"{base}.well-known/jwks.json"
+        _jwks_client = jwt.PyJWKClient(jwks_url)
+    return _jwks_client
+
 security = HTTPBearer()
 
 def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -10,18 +29,10 @@ def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
     
     # 1. Get Signing Key
     try:
-        # Determine JWKS URL (fallback to base url + .well-known if not set)
-        jwks_url = settings.MEDPLUM_JWKS_URL
-        if not jwks_url:
-            base = settings.MEDPLUM_BASE_URL
-            if not base.endswith("/"):
-                base += "/"
-            jwks_url = f"{base}.well-known/jwks.json"
-
-        jwks_client = jwt.PyJWKClient(jwks_url)
+        jwks_client = get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(token)
     except Exception as e:
-        print(f"JWKS Error: {e}")
+        logger.error(f"JWKS Error: {e}")
         raise HTTPException(status_code=401, detail="Could not retrieve signing key")
 
     # 2. Verify Token
@@ -52,5 +63,5 @@ def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
     except jwt.InvalidIssuerError:
         raise HTTPException(status_code=401, detail="Invalid issuer")
     except Exception as e:
-        print(f"JWT Decode Error: {e}")
+        logger.error(f"JWT Decode Error: {e}")
         raise HTTPException(status_code=401, detail="Invalid token")

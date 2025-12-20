@@ -16,6 +16,13 @@ module.exports = {
       ".js",
     ],
   },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "react-native$": "react-native-web",
+    };
+    return config;
+  },
   async rewrites() {
     return [
       {

@@ -8,8 +8,8 @@ class Settings(BaseSettings):
 
     # Medplum Config
     MEDPLUM_BASE_URL: str = "http://localhost:8103/"
-    MEDPLUM_CLIENT_ID: str = "admin"
-    MEDPLUM_CLIENT_SECRET: str
+    MEDPLUM_CLIENT_ID: Optional[str] = "admin"
+    MEDPLUM_CLIENT_SECRET: Optional[str] = None
     
     # JWT Verification
     MEDPLUM_JWKS_URL: Optional[str] = None
@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     MEDPLUM_JWT_AUDIENCE: str = "http://localhost:8103/"
 
     # Backing Services
-    GRAPH_STORE_URL: str
-    GRAPH_STORE_TOKEN: str
-    ANALYTICS_STORE_URL: str
+    GRAPH_STORE_URL: Optional[str] = None
+    GRAPH_STORE_TOKEN: Optional[str] = None
+    ANALYTICS_STORE_URL: Optional[str] = None
     
     # Internal Security
     STARVIT_API_KEY: Optional[str] = None # Only for internal service-to-service

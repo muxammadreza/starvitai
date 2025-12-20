@@ -21,27 +21,50 @@ async def startup_event():
     
     # 1. Trailing slash check
     if not settings.MEDPLUM_BASE_URL.endswith("/"):
-        logger.warning(f"MEDPLUM_BASE_URL '{settings.MEDPLUM_BASE_URL}' is missing trailing slash. This may cause issues.")
-        # We can auto-correct in code, but user requested 'Ensure ... at startup'
-    
+        logger.error(f"MEDPLUM_BASE_URL '{settings.MEDPLUM_BASE_URL}' is missing trailing slash. This is REQUIRED.")
+        raise RuntimeError("Configuration Error: MEDPLUM_BASE_URL must end with a trailing slash.")
+
     # 2. Key config check
     if settings.STARVIT_MODE == "live":
         if not settings.MEDPLUM_JWT_ISSUER or not settings.MEDPLUM_JWT_AUDIENCE:
             logger.error("Missing JWT configuration in LIVE mode")
+            raise RuntimeError("Missing MEDPLUM_JWT_ISSUER or MEDPLUM_JWT_AUDIENCE in LIVE mode")
+            
+        if not settings.MEDPLUM_CLIENT_SECRET:
+            raise RuntimeError("Missing MEDPLUM_CLIENT_SECRET in LIVE mode")
+            
+        if not settings.GRAPH_STORE_URL or not settings.GRAPH_STORE_TOKEN:
+             raise RuntimeError("Missing GRAPH_STORE configuration in LIVE mode")
+
+ALLOWED_ORIGINS_DEV = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+]
+ALLOWED_ORIGINS_STAGING = [
+    "https://admin-staging.starvit.ca",
+    "https://clinician-staging.starvit.ca",
+    "https://research-staging.starvit.ca",
+    "https://fhir-staging.starvit.ca", 
+]
+ALLOWED_ORIGINS_PROD = [
+    "https://admin.starvit.ca",
+    "https://clinician.starvit.ca",
+    "https://research.starvit.ca",
+    "https://app.starvit.ca",
+]
+
+def get_allowed_origins():
+    if settings.APP_ENV == "prod":
+        return ALLOWED_ORIGINS_PROD
+    elif settings.APP_ENV == "staging":
+        return ALLOWED_ORIGINS_STAGING
+    else:
+        return ALLOWED_ORIGINS_DEV
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "https://admin.starvit.ca",
-        "https://clinician.starvit.ca",
-        "https://research.starvit.ca",
-        "https://app.starvit.ca", # Patient app
-        "https://fhir-staging.starvit.ca",
-        "https://admin-staging.starvit.ca",
-    ],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -114,7 +137,8 @@ ALLOWED_GRAPH_QUERIES = {
 
 @app.post("/api/research/graph/query")
 async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
-    request_id = str(time.time()) # Simple ID
+    import uuid
+    request_id = str(uuid.uuid4())
     user_id = user.get("sub", "unknown")
 
     # 1. Allowlist Check
@@ -123,7 +147,14 @@ async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
         raise HTTPException(status_code=403, detail=f"Query '{q.query}' is not allowlisted.")
 
     # 2. Provenance Logging
-    logger.info(f"GraphProvenance: User={user_id} Query={q.query} ReqID={request_id} ParamsHash={hash(str(q.params))}")
+    import hashlib
+    import json
+    
+    # Canonical JSON for consistent hashing
+    canonical_params = json.dumps(q.params, sort_keys=True)
+    params_hash = hashlib.sha256(canonical_params.encode()).hexdigest()
+    
+    logger.info(f"GraphProvenance: User={user_id} Query={q.query} ReqID={request_id} ParamsHash={params_hash}")
 
     # 3. Execution
     try:

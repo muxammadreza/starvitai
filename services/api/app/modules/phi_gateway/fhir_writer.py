@@ -16,10 +16,32 @@ async def write_observation_glucose_ketone_weight(patient_id: str, data: dict):
         "component": []
     }
     
-    if 'glucose' in data:
-         observation['component'].append({
-             "code": {"text": "Glucose"},
-             "valueQuantity": {"value": float(data['glucose']), "unit": "mmol/L"}
-         })
-         
+    # Validate and append components
+    try:
+        if data.get('glucose'):
+            observation['component'].append({
+                "code": {"text": "Glucose"},
+                "valueQuantity": {"value": float(data['glucose']), "unit": "mmol/L"}
+            })
+        
+        if data.get('ketones'):
+            observation['component'].append({
+                "code": {"text": "Ketones"},
+                "valueQuantity": {"value": float(data['ketones']), "unit": "mmol/L"}
+            })
+
+        if data.get('weight'):
+             observation['component'].append({
+                "code": {"text": "Weight"},
+                "valueQuantity": {"value": float(data['weight']), "unit": "kg"}
+            })
+            
+    except ValueError:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Invalid numeric value for measurement")
+
+    if not observation['component']:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="No valid measurements provided")
+        
     return await fhir_store.create_resource("Observation", observation)

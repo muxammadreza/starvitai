@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()\""]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -33,6 +33,7 @@ services:
       # For staging, we assume a staging build or runtime overrides.
     environment:
       NEXT_PUBLIC_API_URL: https://api-staging.starvit.ca
+      STARVIT_API_INTERNAL_URL: http://api:8000
     ports:
       - "3001:3000"
 
@@ -42,5 +43,6 @@ services:
       dockerfile: apps/research/Dockerfile
     environment:
       NEXT_PUBLIC_API_URL: https://api-staging.starvit.ca
+      STARVIT_API_INTERNAL_URL: http://api:8000
     ports:
       - "3002:3000"
