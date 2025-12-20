@@ -1,6 +1,7 @@
 from app.core.config import settings
 from app.core.security import validate_jwt
 from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
@@ -30,8 +31,9 @@ async def startup_event():
             logger.error("Missing JWT configuration in LIVE mode")
             raise RuntimeError("Missing MEDPLUM_JWT_ISSUER or MEDPLUM_JWT_AUDIENCE in LIVE mode")
             
+        # MEDPLUM_CLIENT_SECRET now optional for startup (PHI writes will 501 without it)
         if not settings.MEDPLUM_CLIENT_SECRET:
-            raise RuntimeError("Missing MEDPLUM_CLIENT_SECRET in LIVE mode")
+            logger.warning("MEDPLUM_CLIENT_SECRET not set in LIVE mode. PHI writes will fail.")
             
         if not settings.GRAPH_STORE_URL or not settings.GRAPH_STORE_TOKEN:
              raise RuntimeError("Missing GRAPH_STORE configuration in LIVE mode")
@@ -70,6 +72,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(NotImplementedError)
+async def not_implemented_exception_handler(request: Request, exc: NotImplementedError):
+    return JSONResponse(
+        status_code=501,
+        content={"detail": str(exc), "mode": settings.STARVIT_MODE},
+    )
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "mode": settings.STARVIT_MODE}
@@ -107,9 +116,25 @@ class MeasurementInput(BaseModel):
 
 @app.post("/api/patient/measurements")
 async def post_measurements(data: MeasurementInput, user: dict = Depends(validate_jwt)):
-    # In live mode, ensure we have a valid user from JWT and PHI gateway works
+    # 1. Role Gate (Patient)
+    # Simple check: Does the user have a patient profile?
+    # Medplum profile: "Patient/123"
+    profile = user.get("profile", "")
+    if settings.STARVIT_MODE == "live" and not profile.startswith("Patient/"):
+        raise HTTPException(status_code=403, detail="User is not a Patient")
+
+    # 2. Identity Binding
+    patient_id = data.patientId
+    if settings.STARVIT_MODE == "live":
+        # Extract ID from "Patient/123"
+        token_patient_id = profile.split("/")[-1]
+        
+        # Force the ID to match the token
+        patient_id = token_patient_id
+        logger.info(f"Binding write for {patient_id} derived from token")
+
     result = await write_observation_glucose_ketone_weight(
-        data.patientId, 
+        patient_id, 
         data.model_dump(exclude_none=True)
     )
     return {"status": "received", "fhir_id": result.get("id"), "mode": settings.STARVIT_MODE}

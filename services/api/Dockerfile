@@ -7,8 +7,9 @@ RUN pip install poetry==2.2.1
 COPY services/api/pyproject.toml services/api/poetry.lock* ./
 
 # Install dependencies (no root, no dev)
+# Using 'poetry install --only main --no-interaction --no-ansi --no-root'
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-root
+    && poetry install --only main --no-interaction --no-ansi --no-root
 
 COPY services/api/ .
 

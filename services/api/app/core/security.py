@@ -45,11 +45,11 @@ def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
             options={
                 "verify_signature": True,
                 "verify_exp": True,
-                "verify_nbf": True,
+                # "verify_nbf": True, # Allow tokens without nbf
                 "verify_iat": True,
                 "verify_aud": True,
                 "verify_iss": True,
-                "require": ["exp", "iss", "aud", "nbf"], # Strictly require these claims
+                "require": ["exp", "iss", "aud"], # Removed "nbf"
             },
             # Expected Values
             issuer=settings.MEDPLUM_JWT_ISSUER,

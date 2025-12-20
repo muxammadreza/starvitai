@@ -12,6 +12,7 @@ services:
       MEDPLUM_JWKS_URL: ${MEDPLUM_JWKS_URL}
       MEDPLUM_JWT_ISSUER: ${MEDPLUM_JWT_ISSUER:?MEDPLUM_JWT_ISSUER is required}
       MEDPLUM_JWT_AUDIENCE: ${MEDPLUM_JWT_AUDIENCE:?MEDPLUM_JWT_AUDIENCE is required}
+      MEDPLUM_CLIENT_SECRET: ${MEDPLUM_CLIENT_SECRET} # Optional for startup, required for PHI writes
       
       # Backing Services (De-ID)
       GRAPH_STORE_URL: ${GRAPH_STORE_URL:?GRAPH_STORE_URL is required}

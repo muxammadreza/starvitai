@@ -16,19 +16,13 @@ module.exports = {
       ".js",
     ],
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      "react-native$": "react-native-web",
-    };
-    return config;
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.STARVIT_API_INTERNAL_URL || "http://localhost:8000"}/api/:path*`,
+  experimental: {
+    turbo: {
+       resolveAlias: {
+        "react-native": "react-native-web",
       },
-    ];
+    },
   },
+  // webpack config removed per instructions
+  // rewrites removed per instructions
 };
