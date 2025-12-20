@@ -1,9 +1,9 @@
 from app.adapters import fhir_store
 
-from typing import Optional
+from typing import Optional, Any
 async def write_observation_glucose_ketone_weight(patient_id: str, data: dict, token: Optional[str] = None):
     # Construct FHIR Observation
-    observation = {
+    observation: dict[str, Any] = {
         "resourceType": "Observation",
         "subject": {"reference": f"Patient/{patient_id}"},
         "status": "final",
@@ -19,17 +19,30 @@ async def write_observation_glucose_ketone_weight(patient_id: str, data: dict, t
     
     # Validate and append components
     try:
+        glucose_val = None
+        ketone_val = None
+
         if data.get('glucose'):
+            glucose_val = float(data['glucose'])
             observation['component'].append({
                 "code": {"text": "Glucose"},
-                "valueQuantity": {"value": float(data['glucose']), "unit": "mmol/L"}
+                "valueQuantity": {"value": glucose_val, "unit": "mmol/L"}
             })
         
         if data.get('ketones'):
+            ketone_val = float(data['ketones'])
             observation['component'].append({
                 "code": {"text": "Ketones"},
-                "valueQuantity": {"value": float(data['ketones']), "unit": "mmol/L"}
+                "valueQuantity": {"value": ketone_val, "unit": "mmol/L"}
             })
+
+            # Calculate GKI if we have both
+            if glucose_val is not None:
+                gki = round(glucose_val / ketone_val, 2)
+                observation['component'].append({
+                    "code": {"text": "GKI", "coding": [{"system": "custom", "code": "GKI", "display": "Glucose Ketone Index"}]},
+                    "valueQuantity": {"value": gki, "unit": "{index}"} # GKI is unitless/index
+                })
 
         if data.get('weight'):
              observation['component'].append({

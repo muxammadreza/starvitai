@@ -42,6 +42,7 @@ services:
       MEDPLUM_REDIS_PASSWORD: ${MEDPLUM_REDIS_PASSWORD:?MEDPLUM_REDIS_PASSWORD is required}
       
       # Production Domains
+      MEDPLUM_ALLOWED_ORIGINS: "https://clinician.starvit.ca,https://research.starvit.ca,https://clinician-staging.starvit.ca,https://research-staging.starvit.ca,http://localhost:3000,http://localhost:3001,http://localhost:3002"
       MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:?MEDPLUM_BASE_URL is required}
       MEDPLUM_APP_BASE_URL: ${MEDPLUM_APP_BASE_URL:?MEDPLUM_APP_BASE_URL is required}
       MEDPLUM_STORAGE_BASE_URL: ${MEDPLUM_STORAGE_BASE_URL:?MEDPLUM_STORAGE_BASE_URL is required}

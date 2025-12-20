@@ -80,10 +80,12 @@ class MedplumStore(FhirStore):
 
     async def search_resources(self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None) -> List[Dict[str, Any]]:
         if settings.STARVIT_MODE == "stub":
-            logger.info(f"[MedplumStore STUB] GET {resource_type}")
+            logger.info(f"[MedplumStore STUB] GET {resource_type} params={search_params}")
             return [{"resourceType": resource_type, "id": "stub-search", "mode": "stub"}]
 
         if not token:
+             # If we are in LIVE mode, we MUST have a user token for PHI access.
+             # We do NOT use a service token for general searches to avoid PHI leakage.
              raise NotImplementedError("Medplum live search requires user token")
 
         url = f"{self.base_url}/fhir/R4/{resource_type}"
@@ -91,13 +93,19 @@ class MedplumStore(FhirStore):
              "Authorization": f"Bearer {token}",
              "Content-Type": "application/fhir+json"
         }
+        
         async with httpx.AsyncClient() as client:
-             resp = await client.get(url, params=search_params, headers=headers)
-             resp.raise_for_status()
-             data = resp.json()
-             if "entry" in data:
-                 return [e["resource"] for e in data["entry"]]
-             return []
+             try:
+                 resp = await client.get(url, params=search_params, headers=headers)
+                 resp.raise_for_status()
+                 data = resp.json()
+                 # FHIR Bundle handling
+                 if "entry" in data:
+                     return [e["resource"] for e in data["entry"]]
+                 return []
+             except httpx.HTTPStatusError as e:
+                 logger.error(f"Medplum search error: {e.response.text}")
+                 raise e
 
 class TigerGraphStore(GraphStore):
     def __init__(self):

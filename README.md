@@ -2,7 +2,7 @@
 
 Clinical-grade platform for metabolic therapy support.
 
-## Getting Started
+## Getting Started (Day 1)
 
 ### Prerequisites
 - Node.js 22
@@ -10,43 +10,44 @@ Clinical-grade platform for metabolic therapy support.
 - Docker & Docker Compose
 - Python 3.13+ (for backend local dev without Docker)
 
-### Installation
+### 1. Start Infrastructure (Medplum + DBs)
+Spins up Medplum Server, App, Postgres, and Redis locally.
+```bash
+# Copy env template
+cp infra/dev/.env.local.example infra/dev/.env.local
+
+# Start services
+pnpm dev:infra
+```
+- Medplum App: http://localhost:3000 (Login: `admin@example.com` / `medplum_admin`)
+- Medplum API: http://localhost:8103
+
+### 2. Start Applications (Clinician + Research)
+Runs the Next.js apps in development mode.
 ```bash
 pnpm install
-```
-
-### Development
-Start all services (Frontends + API) in development mode:
-```bash
 pnpm dev
 ```
-- Medplum App: http://localhost:3000
 - Clinician App: http://localhost:3001
 - Research App: http://localhost:3002
-- Patient App: Expo dev server (press `w` for web, or scan QR)
-- API: http://localhost:8000/docs
 
-### Local Infrastructure (Medplum)
-To run the FHIR backend (Medplum) locally:
+### 3. Start Backend (API)
+The backend runs in `stub` mode by default for safety.
 ```bash
-docker compose -f infra/dev/docker-compose.yml up -d
+cd services/api
+cp .env.example .env
+poetry install
+poetry run uvicorn app.main:app --reload --port 8000
 ```
-This spins up:
-- Medplum Server (http://localhost:8103)
-- Medplum App (http://localhost:3000)
-- Postgres & Redis
+- API Docs: http://localhost:8000/docs
 
-**Note:** If running everything together via `infra/dev/docker-compose.yml`, it includes the Starvit API and Medplum. It does NOT include the Next.js apps by default (run those via `pnpm dev` for better DX).
+## Architecture
+- **Apps**: `apps/clinician`, `apps/research`, `apps/patient` (Expo)
+- **Backend**: `services/api` (FastAPI modular monolith)
+- **Infrastructure**: `infra/coolify` (Docker Compose for deployment)
+- **Shared**: `packages/*`
 
-### Deployment (Coolify)
-
-1. **Deploy Medplum Stack**:
-   - Use `infra/coolify/medplum/docker-compose.yml`.
-   - Configure secrets in Coolify.
-   - Domain: `fhir.starvit.ca` (8103), `medplum.starvit.ca` (3000).
-
-2. **Deploy Starvit Stack**:
-   - Use `infra/coolify/starvit/docker-compose.yml`.
-   - Connects to Medplum via URL.
-   - Domain: `api.starvit.ca` (8000), `clinician.starvit.ca` (3000), `research.starvit.ca` (3000, assign distinct domain/port mappings in Coolify).
-   - Patient App: `app.starvit.ca` (hosted via Expo or web build).
+## Security Notes
+- **PHI**: Stays in Medplum (FHIR).
+- **Logs**: Never log PHI or Tokens.
+- **Mode**: `STARVIT_MODE=stub` (default) vs `live`. Live mode requires auth.

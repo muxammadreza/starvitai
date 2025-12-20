@@ -30,7 +30,9 @@ async function proxy(request: NextRequest, params: { path: string[] }) {
   const baseUrl = process.env.STARVIT_API_INTERNAL_URL || "http://localhost:8000";
   const targetUrl = `${baseUrl}/api/${path}${request.nextUrl.search}`;
 
-  console.log(`[Proxy] ${request.method} ${baseUrl}/api/${path}`);
+  /* Safe logging: Request Method and URL basics only, no full path or query params if extraneous */
+  const safePath = path.split("?")[0];
+  console.log(`[Proxy] ${request.method} -> ${baseUrl}/api/${safePath} (Params hidden)`);
 
   try {
     const headers = new Headers(request.headers);

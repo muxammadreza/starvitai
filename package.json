@@ -2,6 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
+    "dev:infra": "docker compose -f infra/coolify/medplum/docker-compose.yml up -d",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules",
