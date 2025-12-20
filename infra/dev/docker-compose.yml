@@ -1,58 +1,103 @@
 services:
+  # --- Medplum PHI Store ---
   postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: medplum
       POSTGRES_PASSWORD: password
       POSTGRES_DB: medplum
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medplum"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   medplum-server:
     image: medplum/medplum-server:${MEDPLUM_VERSION:-5.0.10}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.local
     environment:
+      # Hardcoded for local dev ease, or override in .env.local
       MEDPLUM_DATABASE_HOST: postgres
       MEDPLUM_DATABASE_PASSWORD: password
       MEDPLUM_REDIS_HOST: redis
-      MEDPLUM_BASE_URL: http://localhost:8103/
-      MEDPLUM_APP_BASE_URL: http://localhost:3000/
-      MEDPLUM_STORAGE_BASE_URL: http://localhost:8103/storage/
-      MEDPLUM_BINARY_STORAGE: file:./binary/
       MEDPLUM_DATABASE_DRIVER: postgres
+      MEDPLUM_BINARY_STORAGE: file:/var/lib/medplum/binary/
       NODE_ENV: development
+    volumes:
+      - medplum_binary:/var/lib/medplum/binary
     ports:
       - "8103:8103"
     command: ["node", "packages/server/dist/index.js", "env"]
 
   medplum-app:
     image: medplum/medplum-app:${MEDPLUM_VERSION:-5.0.10}
-    environment:
-      MEDPLUM_BASE_URL: http://localhost:8103/
+    env_file:
+      - .env.local
     ports:
       - "3000:3000"
 
+  # --- De-Identified Analytics Store ---
+  analytics-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: analytics
+      POSTGRES_PASSWORD: analytics
+      POSTGRES_DB: starvit_analytics
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Backend API ---
   api:
     build:
       context: ../..
       dockerfile: services/api/Dockerfile
+    env_file:
+      - .env.local
     environment:
+      # Override hostnames for internal docker networking
+      MEDPLUM_JWKS_URL: http://medplum-server:8103/.well-known/jwks.json
       MEDPLUM_BASE_URL: http://medplum-server:8103/
-      MEDPLUM_CLIENT_ID: admin
-      MEDPLUM_CLIENT_SECRET: secret
-       # TigerGraph / GraphStore stubs
+      MEDPLUM_JWT_ISSUER: http://localhost:8103/
+      MEDPLUM_JWT_AUDIENCE: http://localhost:8103/
+      ANALYTICS_STORE_URL: postgresql://analytics:analytics@analytics-postgres:5432/starvit_analytics
+      # Graph store stub or real
       GRAPH_STORE_URL: http://tigergraph:9000
-      GRAPH_STORE_TOKEN: ${GRAPH_STORE_TOKEN}
-      ANALYTICS_STORE_URL: ${ANALYTICS_STORE_URL:-postgresql://user:password@postgres:5432/starvit_analytics}
-      STARVIT_API_KEY: ${STARVIT_API_KEY}
     ports:
       - "8000:8000"
     depends_on:
-      - medplum-server
+      medplum-server:
+        condition: service_started
+      analytics-postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  analytics_data:
+  medplum_binary:

@@ -14,7 +14,14 @@ module.exports = {
       ".ts",
       ".jsx",
       ".js",
-      ".json",
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.STARVIT_API_INTERNAL_URL || "http://localhost:8000"}/api/:path*`,
+      },
+    ];
   },
 };

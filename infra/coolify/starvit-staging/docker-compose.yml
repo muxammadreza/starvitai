@@ -5,7 +5,7 @@ services:
       dockerfile: services/api/Dockerfile
     environment:
       STARVIT_MODE: live
-      APP_ENV: prod
+      APP_ENV: staging
       
       # Auth & Config
       MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:?MEDPLUM_BASE_URL is required}
@@ -29,9 +29,10 @@ services:
     build:
       context: ../../..
       dockerfile: apps/clinician/Dockerfile
+      # Note: Next.js PUBLIC vars are build-time. We must rebuild or use runtime config.
+      # For staging, we assume a staging build or runtime overrides.
     environment:
-      NEXT_PUBLIC_API_URL: https://api.starvit.ca
-      STARVIT_API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: https://api-staging.starvit.ca
     ports:
       - "3001:3000"
 
@@ -40,7 +41,6 @@ services:
       context: ../../..
       dockerfile: apps/research/Dockerfile
     environment:
-      NEXT_PUBLIC_API_URL: https://api.starvit.ca
-      STARVIT_API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: https://api-staging.starvit.ca
     ports:
       - "3002:3000"
