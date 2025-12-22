@@ -2,7 +2,7 @@
 description: Bootstrap Starvit web frontend stack (Next.js + shadcn/ui + contract clients)
 ---
 
-Goal: bring a web app (`apps/clinician-web` or `apps/research-workbench`) to Starvit baseline conventions.
+Goal: bring a web app (`apps/clinician` or `apps/research`) to Starvit baseline conventions.
 
 Steps:
 

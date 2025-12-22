@@ -22,6 +22,14 @@ def get_jwks_client():
 security = HTTPBearer()
 
 def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if settings.STARVIT_MODE == "stub":
+        logger.info("Auth: Stub mode enabled, bypassing JWT checks")
+        return {
+             "sub": "stub_user_123",
+             "profile": "Patient/p123", 
+             "_token": "stub_token"
+        }
+
     token = credentials.credentials
     
     # 1. Get Signing Key

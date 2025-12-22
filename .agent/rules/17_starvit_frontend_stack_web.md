@@ -8,8 +8,8 @@ This rule is the **source of truth** for web-frontend tech choices for Starvit.
 
 ## Target apps
 
-- `apps/clinician-web` (Clinician Dashboard)
-- `apps/research-workbench` (De-identified analytics + graph exploration)
+- `apps/clinician` (Clinician Dashboard)
+- `apps/research` (De-identified analytics + graph exploration)
 - `packages/ui` (shared design-system components for web)
 
 ## Baseline stack (approved)
@@ -54,4 +54,4 @@ This rule is the **source of truth** for web-frontend tech choices for Starvit.
 
 - Never store access tokens in `localStorage`/`sessionStorage`.
 - Prefer HttpOnly secure cookies or token-in-memory strategies; ensure CSRF posture is defined for cookie-based auth.
-- Do not render PHI in research-workbench. Only de-identified datasets are allowed.
+- Do not render PHI in research. Only de-identified datasets are allowed.

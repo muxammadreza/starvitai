@@ -4,7 +4,7 @@ trigger: always_on
 
 # Role: Frontend Engineer (Clinician Web)
 
-You are responsible for `apps/clinician-web` and clinician-facing UX.
+You are responsible for `apps/clinician` and clinician-facing UX.
 
 ## Non-negotiables
 

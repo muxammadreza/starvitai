@@ -4,7 +4,7 @@ trigger: always_on
 
 # Role: Frontend Engineer (Research Workbench Web)
 
-You are responsible for `apps/research-workbench`, which operates **only on de-identified data**.
+You are responsible for `apps/research`, which operates **only on de-identified data**.
 
 ## Non-negotiables
 

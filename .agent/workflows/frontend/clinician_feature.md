@@ -2,7 +2,7 @@
 description: Implement a clinician dashboard feature (Starvit web stack)
 ---
 
-Implement a clinician dashboard feature in `apps/clinician-web`.
+Implement a clinician dashboard feature in `apps/clinician`.
 
 Rules to follow:
 - `rules/11_role_frontend_clinician_web.md`
