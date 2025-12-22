@@ -1,9 +1,11 @@
 {
-  "name": "api",
+  "name": "@starvit/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
     "dev": "poetry run uvicorn app.main:app --reload",
-    "start": "poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    "start": "poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "build": "echo 'No build step for python service'",
+    "lint": "poetry run ruff check . && poetry run ruff format --check ."
   }
 }

@@ -2,6 +2,7 @@
   "name": "@starvit/eslint-config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "main": "index.js",
   "dependencies": {
     "eslint-plugin-turbo": "^2.7.1"

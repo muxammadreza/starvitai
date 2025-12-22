@@ -1,37 +1,39 @@
-from app.core.config import settings
-from app.core.security import validate_jwt
-from fastapi import FastAPI, HTTPException, Request, Security, Depends
+import logging
+
+from fastapi import Depends, FastAPI, HTTPException, Request, Security
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
-from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
-from app.adapters import graph_store
-import logging
-import time
 
-from fastapi.middleware.cors import CORSMiddleware
+from app.adapters import graph_store
+from app.core.config import settings
+from app.core.security import validate_jwt
+from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 
 logger = logging.getLogger("starvit-api")
 
 app = FastAPI(title="Starvit API")
 
+
 # Startup Checks
 @app.on_event("startup")
 async def startup_event():
     logger.info(f"Starting Starvit API in {settings.STARVIT_MODE.upper()} mode")
-    
+
     # Key config check
     if settings.STARVIT_MODE == "live":
         if not settings.JWT_ISSUER or not settings.JWT_AUDIENCE or not settings.JWKS_URL:
             logger.error("Missing JWT configuration (ISSUER, AUDIENCE, or JWKS_URL) in LIVE mode")
             raise RuntimeError("Missing JWT configuration in LIVE mode")
-            
+
         if not settings.GCP_PROJECT_ID:
             logger.error("GCP_PROJECT_ID missing in LIVE mode")
             raise RuntimeError("Missing GCP_PROJECT_ID in LIVE mode")
-            
+
         if not settings.TG_API_BASE or not settings.TG_API_KEY:
-             raise RuntimeError("Missing TigerGraph configuration in LIVE mode")
+            raise RuntimeError("Missing TigerGraph configuration in LIVE mode")
+
 
 ALLOWED_ORIGINS_DEV = [
     "http://localhost:3000",
@@ -48,6 +50,7 @@ ALLOWED_ORIGINS_PROD = [
     "https://app.starvit.ca",
 ]
 
+
 def get_allowed_origins():
     if settings.APP_ENV == "prod":
         return ALLOWED_ORIGINS_PROD
@@ -55,6 +58,7 @@ def get_allowed_origins():
         return ALLOWED_ORIGINS_STAGING
     else:
         return ALLOWED_ORIGINS_DEV
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,6 +68,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(NotImplementedError)
 async def not_implemented_exception_handler(request: Request, exc: NotImplementedError):
     return JSONResponse(
@@ -71,12 +76,15 @@ async def not_implemented_exception_handler(request: Request, exc: NotImplemente
         content={"detail": str(exc), "mode": settings.STARVIT_MODE},
     )
 
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "mode": settings.STARVIT_MODE}
 
+
 # Internal / Admin Security
 api_key_header = APIKeyHeader(name="X-Starvit-API-Key", auto_error=True)
+
 
 def verify_internal_api_key(api_key: str = Security(api_key_header)):
     """
@@ -86,17 +94,16 @@ def verify_internal_api_key(api_key: str = Security(api_key_header)):
     if not settings.STARVIT_API_KEY:
         # In prod, if key not set, this mechanism is disabled or fails safe
         raise HTTPException(status_code=403, detail="API Key auth disabled")
-        
+
     if api_key != settings.STARVIT_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     return api_key
 
+
 @app.get("/api/admin/config", dependencies=[Depends(verify_internal_api_key)])
 def get_admin_config():
-    return {
-        "status": "secure_admin_access_granted", 
-        "mode": settings.STARVIT_MODE
-    }
+    return {"status": "secure_admin_access_granted", "mode": settings.STARVIT_MODE}
+
 
 @app.get("/api/admin/tigergraph/health", dependencies=[Depends(verify_internal_api_key)])
 async def tigergraph_health_check():
@@ -111,13 +118,14 @@ async def tigergraph_health_check():
         # We'll try hitting a known safe endpoint or just check if TCP connects
         # For Savanna, we might list endpoints or just return config status if no simple health endpoint exists.
         # Actually, let's try a simple query if available, or just report configured.
-        
+
         if not settings.TG_API_BASE:
             return {"status": "error", "detail": "Not Configured"}
-            
+
         return {"status": "configured", "base_url": settings.TG_API_BASE}
     except Exception as e:
-         return {"status": "error", "detail": str(e)}
+        return {"status": "error", "detail": str(e)}
+
 
 def validate_no_phi(params: dict):
     """
@@ -127,15 +135,16 @@ def validate_no_phi(params: dict):
     - Checks recursively (simple depth).
     """
     import re
+
     # FHIR UUID pattern (weak check, but good heuristic)
-    fhir_id_pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
-    
+    fhir_id_pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
     for k, v in params.items():
         if isinstance(v, str):
             # 1. Reject obvious FHIR UUIDs in sensitive fields
             if "patient" in k.lower() and fhir_id_pattern.match(v):
                 raise ValueError(f"PHI Guard: Parameter '{k}' looks like a raw FHIR ID. Use pseudonymized IDs for research.")
-                
+
             # 2. Reject explicit emails/names (very rough)
             if "@" in v and "." in v:
                 # Basic email heuristic
@@ -148,6 +157,7 @@ class MeasurementInput(BaseModel):
     glucose: str | None = None
     ketones: str | None = None
     weight: str | None = None
+
 
 @app.post("/api/patient/measurements")
 async def post_measurements(data: MeasurementInput, user: dict = Depends(validate_jwt)):
@@ -163,17 +173,16 @@ async def post_measurements(data: MeasurementInput, user: dict = Depends(validat
     if settings.STARVIT_MODE == "live":
         # Extract ID from "Patient/123" if present, else use as is
         token_patient_id = profile.split("/")[-1]
-        
+
         # Force the ID to match the token for safety
         patient_id = token_patient_id
-        logger.info(f"Binding write for patient derived from token")
+        logger.info("Binding write for patient derived from token")
 
     result = await write_observation_glucose_ketone_weight(
-        patient_id, 
-        data.model_dump(exclude_none=True),
-        token=user.get("_token")
+        patient_id, data.model_dump(exclude_none=True), token=user.get("_token")
     )
     return {"status": "received", "fhir_id": result.get("id"), "mode": settings.STARVIT_MODE}
+
 
 # Clinician Endpoints (Stub)
 @app.get("/api/clinician/patients")
@@ -184,21 +193,25 @@ def get_patients(user: dict = Depends(validate_jwt)):
         # LIVE Implementation missing
         raise HTTPException(status_code=501, detail="Live patient list not implemented")
 
+
 # Research Endpoints
 class GraphQuerySync(BaseModel):
     query: str
     params: dict
 
+
 # Allowlist Enforcement
 ALLOWED_GRAPH_QUERIES = {
     "get_patient_subgraph",
-    "find_similar_patients", 
-    "recommend_protocol_adjustments"
+    "find_similar_patients",
+    "recommend_protocol_adjustments",
 }
+
 
 @app.post("/api/research/graph/query")
 async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
     import uuid
+
     request_id = str(uuid.uuid4())
     user_id = user.get("sub", "unknown")
 
@@ -217,11 +230,11 @@ async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
     # 2. Provenance Logging
     import hashlib
     import json
-    
+
     # Canonical JSON for consistent hashing
     canonical_params = json.dumps(q.params, sort_keys=True)
     params_hash = hashlib.sha256(canonical_params.encode()).hexdigest()
-    
+
     logger.info(f"GraphProvenance: User={user_id} Query={q.query} ReqID={request_id} ParamsHash={params_hash}")
 
     # 3. Execution

@@ -8,9 +8,13 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "build": "expo export -p web",
     "eject": "expo eject"
   },
   "dependencies": {
+    "@starvit/api-client": "workspace:*",
+    "@starvit/protocol": "workspace:*",
+    "@starvit/types": "workspace:*",
     "@starvit/ui": "workspace:*",
     "expo": "~54.0.30",
     "expo-constants": "~18.0.12",
@@ -23,13 +27,11 @@
     "react-native": "0.81.3",
     "react-native-safe-area-context": "5.6.2",
     "react-native-screens": "~4.19.0",
-    "react-native-web": "~0.21.2",
-    "@starvit/types": "workspace:*",
-    "@starvit/protocol": "workspace:*",
-    "@starvit/api-client": "workspace:*"
+    "react-native-web": "~0.21.2"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
+    "@expo/metro-runtime": "^6.1.2",
     "@types/react": "~19.2.7",
     "typescript": "5.9.3"
   },

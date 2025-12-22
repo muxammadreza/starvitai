@@ -184,6 +184,9 @@ importers:
       '@babel/core':
         specifier: ^7.28.5
         version: 7.28.5
+      '@expo/metro-runtime':
+        specifier: ^6.1.2
+        version: 6.1.2(expo@54.0.30)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.3(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))(react@19.1.0)
       '@types/react':
         specifier: ~19.2.7
         version: 19.2.7
@@ -291,12 +294,18 @@ importers:
         specifier: ^1.13.2
         version: 1.13.2
     devDependencies:
+      '@starvit/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config-starvit
       '@starvit/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.3
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2(jiti@2.6.1)
       orval:
         specifier: ^7.17.2
         version: 7.17.2(openapi-types@12.1.3)(typescript@5.9.3)
@@ -328,12 +337,18 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
     devDependencies:
+      '@starvit/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config-starvit
       '@starvit/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.3
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2(jiti@2.6.1)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.4.49)(typescript@5.9.3)(yaml@2.8.2)
@@ -343,12 +358,18 @@ importers:
 
   packages/types:
     devDependencies:
+      '@starvit/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config-starvit
       '@starvit/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.3
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2(jiti@2.6.1)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.4.49)(typescript@5.9.3)(yaml@2.8.2)
@@ -360,12 +381,18 @@ importers:
 
   packages/ui:
     devDependencies:
+      '@starvit/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config-starvit
       '@starvit/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/react':
         specifier: ^19.2.7
         version: 19.2.7
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2(jiti@2.6.1)
       react:
         specifier: 19.1.0
         version: 19.1.0

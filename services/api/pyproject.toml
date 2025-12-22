@@ -20,6 +20,9 @@ dependencies = [
 [tool.poetry]
 package-mode = false
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.10"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -39,6 +42,8 @@ testpaths = ["tests"]
 
 [tool.ruff]
 target-version = "py313"
-line-length = 100
+line-length = 128
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 ignore = []

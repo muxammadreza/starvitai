@@ -1,5 +1,5 @@
 ---
-description: Universal router for Starvit: classify a request, select workflows, dispatch agents, and enforce gates
+description: Universal router for Starvit. classify a request, select workflows, dispatch agents, and enforce gates
 ---
 
 Use this workflow when you want the agent to automatically decide **which specialists** and **which Starvit workflows** should run, then execute (or propose a multi-agent dispatch plan) safely.

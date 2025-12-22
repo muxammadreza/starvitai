@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
 from typing import Optional
+
+from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     # App Mode
@@ -11,15 +13,15 @@ class Settings(BaseSettings):
     GCP_LOCATION: str = "us-central1"
     FHIR_DATASET_ID: str = "starvit-fhir"
     FHIR_STORE_ID: str = "main"
-    
+
     # TigerGraph Savanna (De-ID Graph)
     TG_API_BASE: Optional[str] = None
     TG_API_KEY: Optional[str] = None
     TG_GRAPH_NAME: str = "Starvit"
-    
+
     # BigQuery (De-ID Analytics)
     BQ_DATASET_ID: str = "starvit_analytics"
-    
+
     # Auth (JWT)
     JWT_ISSUER: Optional[str] = None
     JWT_AUDIENCE: Optional[str] = None
@@ -30,5 +32,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()

@@ -1,14 +1,16 @@
-import jwt
-from fastapi import HTTPException, Security, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.core.config import settings
-
 import logging
+
+import jwt
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.core.config import settings
 
 logger = logging.getLogger("starvit-auth")
 
 # Global JWK Client to avoid re-fetching on every request
 _jwks_client = None
+
 
 def get_jwks_client():
     global _jwks_client
@@ -19,19 +21,17 @@ def get_jwks_client():
         _jwks_client = jwt.PyJWKClient(jwks_url)
     return _jwks_client
 
+
 security = HTTPBearer()
+
 
 def validate_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if settings.STARVIT_MODE == "stub":
         logger.info("Auth: Stub mode enabled, bypassing JWT checks")
-        return {
-             "sub": "stub_user_123",
-             "profile": "Patient/p123", 
-             "_token": "stub_token"
-        }
+        return {"sub": "stub_user_123", "profile": "Patient/p123", "_token": "stub_token"}
 
     token = credentials.credentials
-    
+
     # 1. Get Signing Key
     try:
         jwks_client = get_jwks_client()

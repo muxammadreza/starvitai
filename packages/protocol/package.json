@@ -1,12 +1,14 @@
 {
   "name": "@starvit/protocol",
   "version": "0.0.0",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "eslint ."
   },
   "dependencies": {
     "xstate": "^5.25.0",
@@ -17,6 +19,8 @@
     "@starvit/typescript-config": "workspace:*",
     "@types/node": "^22.10.2",
     "tsup": "^8.5.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "eslint": "^9.39.2",
+    "@starvit/eslint-config": "workspace:*"
   }
 }

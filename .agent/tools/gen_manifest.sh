@@ -10,7 +10,7 @@ python3 - <<'PY'
 import hashlib
 from pathlib import Path
 
-root = Path(".")
+root = Path("/Users/mo/projects/starvitai")
 agent = root/".agent"
 
 def sha256_file(p: Path):
