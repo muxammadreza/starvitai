@@ -1,0 +1,12 @@
+{
+  "name": "@starvit/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "eslint-plugin-turbo": "^2.7.1"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0"
+  }
+}

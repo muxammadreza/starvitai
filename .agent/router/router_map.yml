@@ -1,0 +1,160 @@
+version: 1
+risk_tiers:
+  tier0: Docs-only or non-functional formatting. No runtime impact.
+  tier1: Local code refactor/bugfix with no PHI/auth/data-pipeline/ML impact.
+  tier2: Touches auth/RBAC, audit logging, de-identification, datasets/features, TigerGraph
+    queries, or deployments.
+  tier3: Touches PHI boundary, FHIR access, data movement between zones, model behavior
+    affecting clinicians, or security-critical paths.
+domains:
+  frontend_clinician:
+    lead_role_rule: .agent/rules/11_role_frontend_clinician_web.md
+    supporting_role_rules:
+    - .agent/rules/13_role_uiux_design_system.md
+    - .agent/rules/16_role_accessibility_qa.md
+    workflows:
+    - .agent/workflows/frontend/clinician_feature.md
+    - .agent/workflows/frontend/design_system_component.md
+    - .agent/workflows/frontend/add_form_rhf_zod.md
+    - .agent/workflows/frontend/add_table_tanstack_virtual.md
+    - .agent/workflows/frontend/add_chart_recharts.md
+    - .agent/workflows/frontend/add_rbac_guard.md
+    mandatory_gates:
+    - .agent/workflows/qa/accessibility_review.md
+    - .agent/workflows/03_security_privacy_gate.md
+  frontend_research_workbench:
+    lead_role_rule: .agent/rules/20_role_frontend_research_workbench_web.md
+    supporting_role_rules:
+    - .agent/rules/41_role_graph_engineering.md
+    workflows:
+    - .agent/workflows/frontend/research_feature_table.md
+    - .agent/workflows/frontend/research_graph_reactflow.md
+    - .agent/workflows/graph/research_api_allowlist_change.md
+    mandatory_gates:
+    - .agent/workflows/03_security_privacy_gate.md
+    - .agent/workflows/critics/threat_model.md
+  mobile_patient_app:
+    lead_role_rule: .agent/rules/12_role_mobile_patient_app.md
+    supporting_role_rules:
+    - .agent/rules/21_role_privacy_compliance.md
+    workflows:
+    - .agent/workflows/mobile/bootstrap_patient_mobile.md
+    - .agent/workflows/mobile/measurement_capture.md
+    - .agent/workflows/mobile/offline_logging_flow.md
+    mandatory_gates:
+    - .agent/workflows/03_security_privacy_gate.md
+  backend_api:
+    lead_role_rule: .agent/rules/10_role_backend_platform.md
+    supporting_role_rules:
+    - .agent/rules/31_role_observability.md
+    workflows:
+    - .agent/workflows/backend/bootstrap_fastapi_feature_module.md
+    - .agent/workflows/backend/add_api_endpoint.md
+    - .agent/workflows/backend/add_observability_otel.md
+    mandatory_gates:
+    - .agent/workflows/security/privacy_compliance_review.md
+    - .agent/workflows/03_security_privacy_gate.md
+  phi_fhir_boundary:
+    lead_role_rule: .agent/rules/60_role_clinical_informatics_safety.md
+    supporting_role_rules:
+    - .agent/rules/21_role_privacy_compliance.md
+    - .agent/rules/22_role_iam_audit.md
+    - .agent/rules/10_role_backend_platform.md
+    workflows:
+    - .agent/workflows/backend/fhir_resource_change.md
+    - .agent/workflows/backend/add_healthcare_fhir_adapter_operation.md
+    - .agent/workflows/security/iam_rbac_audit.md
+    mandatory_gates:
+    - .agent/workflows/security/privacy_compliance_review.md
+    - .agent/workflows/critics/clinical_safety_review.md
+    - .agent/workflows/critics/threat_model.md
+  data_plane:
+    lead_role_rule: .agent/rules/45_role_data_platform_architect.md
+    supporting_role_rules:
+    - .agent/rules/46_role_bigquery_analytics_engineer.md
+    - .agent/rules/43_role_data_governance_steward.md
+    - .agent/rules/42_role_data_quality.md
+    workflows:
+    - .agent/workflows/data/provision_bigquery_datasets_and_iam.md
+    - .agent/workflows/data/data_governance_deid_pipeline.md
+    - .agent/workflows/data/fhir_to_bigquery_export.md
+    - .agent/workflows/data/dbt_or_dataform_transformation_change.md
+    - .agent/workflows/data/dataflow_streaming_pipeline_pubsub_bigquery.md
+    - .agent/workflows/data/build_feature_tables.md
+    - .agent/workflows/data/data_quality_checks.md
+    - .agent/workflows/data/define_data_contracts_and_lineage.md
+    mandatory_gates:
+    - .agent/workflows/critics/arch_review.md
+    - .agent/workflows/03_security_privacy_gate.md
+  graph_tigergraph:
+    lead_role_rule: .agent/rules/41_role_graph_engineering.md
+    supporting_role_rules:
+    - .agent/rules/44_role_tigergraph_platform_engineering.md
+    - .agent/rules/20_role_security.md
+    workflows:
+    - .agent/workflows/graph/design_graph_schema.md
+    - .agent/workflows/graph/implement_tigergraph_schema_and_loading.md
+    - .agent/workflows/graph/build_graph_ingestion_pipeline.md
+    - .agent/workflows/graph/run_gds_and_export_embeddings.md
+    - .agent/workflows/graph/build_graph_query_allowlist_api.md
+    mandatory_gates:
+    - .agent/workflows/graph/research_api_allowlist_change.md
+    - .agent/workflows/critics/threat_model.md
+  ml_ai:
+    lead_role_rule: .agent/rules/50_role_ml_engineering.md
+    supporting_role_rules:
+    - .agent/rules/52_role_model_risk_eval.md
+    - .agent/rules/51_role_mlops.md
+    - .agent/rules/55_role_feature_store_engineering.md
+    workflows:
+    - .agent/workflows/ml/train_and_register_model.md
+    - .agent/workflows/ml/evaluation_and_model_card.md
+    - .agent/workflows/ml/mlops_model_deploy.md
+    - .agent/workflows/ml/inference_contract_audit.md
+    - .agent/workflows/ml/novelty_candidate_generation.md
+    mandatory_gates:
+    - .agent/workflows/ml/model_risk_review.md
+    - .agent/workflows/03_security_privacy_gate.md
+    - .agent/workflows/critics/clinical_safety_review.md
+  security_compliance:
+    lead_role_rule: .agent/rules/20_role_security.md
+    supporting_role_rules:
+    - .agent/rules/21_role_privacy_compliance.md
+    - .agent/rules/22_role_iam_audit.md
+    workflows:
+    - .agent/workflows/security/privacy_compliance_review.md
+    - .agent/workflows/security/iam_rbac_audit.md
+    - .agent/workflows/security/supply_chain_intake.md
+    - .agent/workflows/security/prompt_injection_test.md
+    mandatory_gates:
+    - .agent/workflows/critics/threat_model.md
+  docs_and_runbooks:
+    lead_role_rule: .agent/rules/72_role_documentation.md
+    supporting_role_rules: []
+    workflows:
+    - .agent/workflows/docs/update_docs_and_runbooks.md
+    mandatory_gates: []
+  clinical_research:
+    lead_role_rule: .agent/rules/62_role_metabolic_oncology_clinical_lead.md
+    supporting_role_rules:
+    - .agent/rules/73_role_scientific_evidence_curator.md
+    - .agent/rules/65_role_biostatistician_clinical_trialist.md
+    - .agent/rules/66_role_regulatory_samd_cds.md
+    - .agent/rules/67_role_ethics_irb_research_governance.md
+    - .agent/rules/69_role_patient_safety_monitoring.md
+    - .agent/rules/68_role_evolutionary_medicine_hypothesis.md
+    - .agent/rules/63_role_oncology_dietitian_kmt.md
+    - .agent/rules/64_role_clinical_pharmacist_repursposed_drugs.md
+    workflows:
+    - .agent/workflows/clinical/evidence_card.md
+    - .agent/workflows/clinical/living_review_update.md
+    - .agent/workflows/clinical/safety_signal_triage.md
+    - .agent/workflows/clinical/trial_protocol_spirit.md
+    - .agent/workflows/clinical/protocol_change.md
+    mandatory_gates:
+    - .agent/workflows/critics/clinical_safety_review.md
+    - .agent/workflows/03_security_privacy_gate.md
+    - .agent/workflows/critics/threat_model.md
+always_on_gates:
+- .agent/workflows/03_security_privacy_gate.md
+- .agent/workflows/04_release_readiness.md

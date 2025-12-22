@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:api": "cd services/api && poetry run uvicorn app.main:app --reload --port 8000",
+    "dev:db": "docker compose -f infra/dev/docker-compose.yml up -d analytics-postgres",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.0.0",
+    "@eslint/js": "^9.39.2",
+    "@starvit/eslint-config": "workspace:*",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "eslint-plugin-turbo": "^2.7.1",
+    "minimatch": "^10.1.1",
+    "prettier": "^3.7.4",
+    "turbo": "^2.7.1"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "name": "@starvit/monorepo",
+  "packageManager": "pnpm@10.26.0"
+}

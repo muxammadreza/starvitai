@@ -1,0 +1,50 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# testing
+coverage
+.early.coverage
+
+# build and logs
+dist/
+build/
+out/
+.swc/
+.next/
+next-env.d.ts
+.turbo/
+*.tsbuildinfo
+*.log
+.vercel
+.expo/
+.expo-shared/
+web-build/
+
+# misc
+.DS_Store
+*.pem
+.env
+.env.*
+!.env.example
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# research data
+docs/research/
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+.env
+.python-version
+poetry.lock.bak

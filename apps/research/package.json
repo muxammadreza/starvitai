@@ -1,0 +1,44 @@
+{
+  "name": "@starvit/research",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@starvit/api-client": "workspace:*",
+    "@starvit/protocol": "workspace:*",
+    "@starvit/types": "workspace:*",
+    "@starvit/ui": "workspace:*",
+    "@xstate/react": "^6.0.0",
+    "@xyflow/react": "^12.10.0",
+    "antd": "^6.1.1",
+    "next": "16.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-native-web": "^0.21.2",
+    "xstate": "^5.25.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.39.2",
+    "@next/eslint-plugin-next": "16.1.0",
+    "@starvit/typescript-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "babel-plugin-react-native-web": "^0.21.2",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "16.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-turbo": "^2.7.1",
+    "globals": "^16.5.0",
+    "typescript": "5.9.3"
+  }
+}

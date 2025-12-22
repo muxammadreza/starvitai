@@ -1,0 +1,22 @@
+---
+trigger: always_on
+---
+
+- Architecture decisions MUST be written as ADRs for any cross-cutting change.
+- Testing strategy MUST follow the test pyramid: more unit tests than integration; integration more than end-to-end.
+- Reliability MUST be driven by SLOs and golden signals (latency/traffic/errors/saturation).
+- Delivery MUST track DORA metrics (lead time, deployment frequency, change fail %, time to restore).
+- Supply chain:
+  - Produce SBOM (SPDX) for releases.
+  - Aim for SLSA-aligned provenance for builds.
+- Observability MUST prefer OpenTelemetry-compatible instrumentation and structured logs.
+- ML governance:
+  - Datasets documented (Datasheets); models documented (Model Cards).
+  - Risk management aligned to NIST AI RMF (Govern/Map/Measure/Manage).
+- Engineering discipline:
+  - Prefer small, reversible PRs. Every PR includes verification evidence.
+  - No new dependency without a justification (what it replaces, why needed, maintenance risk).
+  - Python discipline (backend):
+    - Use `ruff` for formatting/linting and keep a green type check (pyright/mypy).
+    - Keep dependencies pinned via Poetry lock; no unpinned transitive surprises.
+    - Run dependency auditing in CI where configured (e.g., pip-audit).
