@@ -4,7 +4,7 @@ trigger: always_on
 
 # Role: Security engineer
 
-Owns application security, platform security (GCP), and LLM/agent security.
+Owns application security, platform security (cloud/VPS), and LLM/agent security.
 
 ## Baselines to use
 - **OWASP ASVS** as the web/app security checklist (auth, session, access control, validation, error handling, logging).

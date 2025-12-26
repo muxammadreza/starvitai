@@ -16,7 +16,7 @@ Starvit’s “scientific spine” is metabolic‑oncology viewed through an evo
 This is not a “diet app.” It is an auditable decision‑support + research platform.
 
 ### Architecture invariants (do not violate)
-- PHI system of record: **GCP Healthcare API (FHIR R4)**.
+- PHI system of record: **Medplum FHIR store (FHIR R4)**.
 - De‑identified zone: **BigQuery** + **TigerGraph** only; **no PHI**.
 - Graph DB (TigerGraph) is **de‑identified zone only** and **never** accessed directly by UIs.
 - One backend for MVP (modular monolith). Multiple UIs may exist.

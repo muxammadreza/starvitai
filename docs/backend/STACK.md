@@ -1,16 +1,16 @@
 # Backend stack and engineering conventions
 
 ## What this backend is
-Starvit's backend is a **Python 3.13 + FastAPI** modular monolith deployed to **Cloud Run**. It is the policy enforcement point for:
-- PHI zone access (FHIR System of Record on GCP Healthcare API)
-- derived metrics and protocol engine outputs (clinician-approved)
+Starvit's backend is a **Python 3.13 + FastAPI** modular monolith (deployment target is environment-dependent: VPS, Cloud Run, etc.). It is the policy enforcement point for:
+- integrating with the **Medplum PHI system of record** (FHIR R4)
+- derived metrics and protocol-engine outputs (always clinician-approved)
 - auditability and provenance logging
 - controlled research access to **de-identified** BigQuery/TigerGraph data
 
 ## Non-negotiables
 - **No autonomous medical decisions.** All clinically-actionable outputs are flagged for clinician approval and logged.
 - **PHI boundary is sacred.** PHI stays in the FHIR store; analytics/ML use de-identified data only.
-- **Auditability first.** Inputs -> outputs -> model version -> clinician decision.
+- **Auditability first.** Inputs -> outputs -> model/protocol version -> clinician decision.
 
 ## Core libraries
 - Web/API: FastAPI
@@ -21,19 +21,22 @@ Starvit's backend is a **Python 3.13 + FastAPI** modular monolith deployed to **
 - Observability: OpenTelemetry (traces) + structured JSON logs
 - Quality gates: ruff, pyright/mypy, pytest
 
-## GCP integrations
-- Prefer official Google Cloud client libraries and ADC:
-  - `google-auth` / `google-auth-httplib2` for credentials
-  - Healthcare API: REST via authenticated HTTP client, or `google-api-python-client` where appropriate
-  - Pub/Sub: `google-cloud-pubsub`
-  - Secret Manager: `google-cloud-secret-manager`
-- Do not ship credential files in containers; use Cloud Run service identity.
+## Primary integration: Medplum
+- Treat Medplum as the canonical PHI datastore and identity provider.
+- Use OAuth2:
+  - Authorization Code flow for interactive apps
+  - Client Credentials for machine-to-machine workers
+- Use AccessPolicy + ProjectMembership as the authorization perimeter.
+
+## Optional cloud integrations (de-identified zone)
+- BigQuery / TigerGraph / Vertex AI are de-identified only.
+- If using managed cloud services, prefer workload/instance identity and managed secret stores.
 
 ## High-level module boundaries
 - `api/` HTTP, OpenAPI, dependencies
 - `services/` application orchestration
 - `domain/` pure domain logic
-- `integrations/` GCP Healthcare API, Pub/Sub, BigQuery, Vertex AI
+- `integrations/` Medplum, BigQuery, Vertex AI, TigerGraph, etc.
 - `persistence/` internal state for non-PHI only (feature flags, job state, etc.)
 
 ## API contract discipline
@@ -51,3 +54,6 @@ Use a consistent JSON error envelope:
 - Unit tests for domain/services (fast)
 - Integration tests for HTTP routes (FastAPI TestClient/httpx)
 - Contract tests for OpenAPI changes (schema snapshot + client regeneration)
+
+## Medplum runbook
+See `docs/backend/MEDPLUM_CONFIGURATION.md`.

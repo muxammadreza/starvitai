@@ -28,7 +28,7 @@ Never run commands that:
 
 ### Secrets handling
 - Never print secrets to logs or chat.
-- Keep all secrets in env vars / secret managers (GCP Secret Manager), never in repo.
+- Keep all secrets in env vars / secret managers (Secret Manager), never in repo.
 
 ### PHI boundary checks
 If any input looks like PHI or could be re-identifying:

@@ -16,14 +16,20 @@ Build and operate the **de-identified** warehouse and feature tables in BigQuery
 - Use views for semantic layers; use tables for heavy transforms/feature snapshots.
 - Enforce job labels (service, owner, environment) for cost attribution.
 
-## FHIR export schema contract (Healthcare API)
-- Prefer `ANALYTICS_V2` for SQL-on-FHIR exports to support extensions/contained resources.
-- Treat exported tables/views as *source-of-truth for de-ID analytics*, but never assume exports are "safe" unless the source FHIR store is de-identified and the de-ID configuration is versioned.
+## FHIR ingest schema contract (Starvit)
+- Input originates from Medplum FHIR Bulk Export (`$export`) and/or de-identified event streams.
+- We do not assume a vendor-provided “SQL-on-FHIR” schema; we maintain a **versioned flattening spec**:
+  1) raw de-identified NDJSON (optional retention)
+  2) normalized resource tables (one per resource type)
+  3) curated fact/dimension and feature tables
+- Exports are only “safe” when:
+  - the de-ID config is versioned and recorded, and
+  - re-identification keys are not present outside the PHI zone.
 
 ## Location constraints (non-negotiable)
 - BigQuery queries and joins require all referenced tables to be in the **same location**.
 - Public datasets often live in `US` or `EU`; you cannot directly join them with Starvit tables in another region.
-- Public datasets may be blocked by VPC Service Controls unless explicitly allowed.
+- Public datasets may be blocked by perimeter controls unless explicitly allowed.
 
 ## Security & governance
 - Dataset-level IAM is the baseline.

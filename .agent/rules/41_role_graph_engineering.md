@@ -15,7 +15,7 @@ Build and maintain the **de‑identified** TigerGraph layer that enables:
 This role is **research‑zone only**. It must never introduce PHI and must never enable direct UI access to TigerGraph.
 
 ## Non‑negotiables
-1. **PHI boundary is sacred**: TigerGraph contains **de‑identified** data only. PHI stays in GCP Healthcare API (FHIR) and controlled storage.
+1. **PHI boundary is sacred**: TigerGraph contains **de‑identified** data only. PHI stays in Medplum (FHIR) and controlled storage.
 2. **No direct UI-to-graph access**: all graph access is via `services/api` (Research API) with **allowlisted** queries and provenance logging.
 3. **Everything is versioned**: graph schema, loading jobs, queries, algorithms, and exported feature tables.
 4. **Reproducibility over cleverness**: deterministic pipelines, pinned versions, and fully traceable runs.

@@ -2,15 +2,15 @@
 
 ## Scope
 This folder defines Starvit’s **data plane** (in addition to TigerGraph):
-- PHI system of record (FHIR on GCP Healthcare API)
+- PHI system of record (FHIR on Medplum)
 - de-identification boundary and pipeline patterns
-- BigQuery warehouse + feature tables
+- BigQuery warehouse + feature tables (de-identified)
 - transformation layer (dbt/Dataform)
 - streaming/batch pipelines (Pub/Sub + Dataflow where needed)
-- operational relational database for **non-PHI** app data (Cloud SQL for Postgres)
+- operational relational database for **non-PHI** app data (Postgres)
 
 ## Architectural boundaries (authoritative)
-- **PHI is stored only in the FHIR store** (GCP Healthcare API, FHIR R4).
+- **PHI is stored only in the FHIR store** (Medplum, FHIR R4).
 - The research/ML zone is **de-identified only**:
   - BigQuery datasets
   - TigerGraph
@@ -18,23 +18,22 @@ This folder defines Starvit’s **data plane** (in addition to TigerGraph):
 - The backend API is the policy enforcement point:
   - access controls
   - allowlisted graph queries
-  - auditability (inputs → outputs → model/version → clinician decision)
+  - auditability (inputs → outputs → versions → clinician decision)
 
 ## Recommended components
 ### 1) PHI zone
-- GCP Healthcare API (FHIR R4): canonical clinical data and observations.
+- Medplum FHIR store (FHIR R4): canonical clinical data and observations.
 
 ### 2) De-identification and movement
-- Use Healthcare API de-identification and/or Cloud DLP configurations as the gate.
-- Support both:
-  - batch exports (backfill, daily refresh)
-  - streaming changes (when near-real-time research updates are required)
+- Use **Cloud DLP** (or an explicitly-approved equivalent) as the de-identification gate before any PHI leaves the PHI zone.
+- Medplum → de-ID zone movement patterns:
+  - **Batch export** via FHIR Bulk Data (`$export`) for backfills and periodic refreshes
+  - **Event-driven** via Medplum Subscriptions/Bots to emit **de-identified** events for downstream processing
 
 ### 3) Warehouse and feature store (de-identified)
 - BigQuery:
   - analytics datasets
   - feature tables/views for training/evaluation
-  - (optional) online feature access via BigQuery views or Vertex Feature Store integration
 
 ### 4) Transformation layer
 - dbt Core is preferred for CI-tested transformations and data contracts.
@@ -46,17 +45,16 @@ This folder defines Starvit’s **data plane** (in addition to TigerGraph):
 - Workflows/Composer for orchestration depending on complexity.
 
 ### 6) Operational relational database (non-PHI)
-- Cloud SQL for Postgres:
-  - users/roles (non-clinical identity metadata)
+- Postgres (Cloud SQL / managed PG / etc.):
   - workflow state and configuration versions
   - audit metadata (no PHI payloads)
   - system bookkeeping
 
 ## Conventions
-- Environment separation: dev/stage/prod projects and datasets.
+- Environment separation: dev/stage/prod datasets.
 - Dataset naming: `sv_<env>_<domain>`
 - Every data product must have:
-  - owner + on-call
+  - owner
   - contract (grain, keys, semantics, units)
   - tests + monitoring
   - retention policy

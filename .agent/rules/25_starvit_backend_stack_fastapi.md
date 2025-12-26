@@ -11,7 +11,7 @@ trigger: always_on
   - `api/schemas/`: Pydantic request/response models
   - `services/`: application services and orchestrators
   - `domain/`: pure domain logic, types, and invariants
-  - `integrations/`: outbound adapters (GCP Healthcare API, Pub/Sub, BigQuery, Vertex AI)
+  - `integrations/`: outbound adapters (Medplum FHIR API, Pub/Sub, BigQuery, Vertex AI)
   - `persistence/`: internal stores for non-PHI configuration and state only
 - Keep FHIR/PHI models separate from internal models. Never store PHI in internal databases.
 

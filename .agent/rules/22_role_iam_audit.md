@@ -4,7 +4,7 @@ trigger: always_on
 
 # Role: IAM / Audit engineer
 
-Owns identity, authorization, auditability, and least-privilege verification across Google Cloud and the application layer.
+Owns identity, authorization, auditability, and least-privilege verification across Medplum, cloud infrastructure, and the application layer.
 
 ## Responsibilities
 - Define and review:

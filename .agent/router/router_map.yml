@@ -62,6 +62,7 @@ domains:
     - .agent/rules/10_role_backend_platform.md
     workflows:
     - .agent/workflows/backend/fhir_resource_change.md
+    - .agent/workflows/backend/medplum_access_policy_setup.md
     - .agent/workflows/backend/add_healthcare_fhir_adapter_operation.md
     - .agent/workflows/security/iam_rbac_audit.md
     mandatory_gates:

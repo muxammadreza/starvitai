@@ -2,7 +2,7 @@
 
 ## Goals
 - Each request is traceable end-to-end with correlation IDs.
-- Audit events can be linked back to the initiating request.
+- Auditability can be linked back to the initiating request.
 - PHI is never written to logs/metrics/traces.
 
 ## Signals (golden signals)
@@ -21,17 +21,18 @@
 - Include `trace_id` + `span_id` for log/trace correlation.
 - Central scrubbing: redact tokens, emails, MRNs, names.
 
-## Audit logging
+## Audit logging (Medplum + Starvit)
 Audit events are not debug logs.
-- include actor identity, action, object, timestamp, rationale
-- store in an append-oriented store suitable for review
+- **Medplum** is the canonical audit trail for PHI read/write activity (FHIR `AuditEvent`).
+- **Starvit** maintains a separate non-PHI operational audit trail for system events (deploys, config changes, job orchestration).
+- If cross-linking is required, link using opaque IDs (e.g., store `trace_id` as a tag/note and never embed patient identifiers).
 
 ## Metrics
 - service-level SLIs used to compute SLOs.
 - pipeline-level metrics for ETL/de-id (counts, failures, lag).
 
 ## Runbooks
-- every alert must have a runbook with:
+- Every alert must have a runbook with:
   - expected impact
   - diagnosis steps
   - rollback or mitigation steps

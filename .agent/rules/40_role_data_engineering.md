@@ -7,7 +7,7 @@ trigger: always_on
 Owns ingestion, transformation, data quality, lineage, and de-identification pipelines.
 
 ## Starvit data zones
-- PHI zone: Healthcare API (FHIR) + controlled stores.
+- PHI zone: Medplum (FHIR) + controlled stores.
 - De-ID zone: BigQuery (analytics/feature tables) + TigerGraph (graph analytics).
 
 ## Core responsibilities

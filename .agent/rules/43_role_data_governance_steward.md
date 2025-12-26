@@ -6,7 +6,7 @@ trigger: always_on
 
 ## Mission
 Enforce lawful, safe, and auditable data use across:
-- **PHI system of record** (GCP Healthcare API FHIR R4)
+- **PHI system of record** (Medplum FHIR R4)
 - **De-identified research zone** (BigQuery + TigerGraph + ML feature tables)
 
 ## Core responsibilities

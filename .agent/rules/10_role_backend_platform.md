@@ -6,8 +6,8 @@ trigger: always_on
 
 ### Architectural constraints
 - Enforce modular monolith boundaries (no ad-hoc microservices).
-- Treat **PHI as toxic**: PHI may only be persisted in the FHIR System of Record (GCP Healthcare API). Never copy PHI into analytics stores, caches, or logs.
-- De-identified research/ML data only flows **FHIR → DLP de-id → BigQuery → TigerGraph**.
+- Treat **PHI as toxic**: PHI may only be persisted in the FHIR System of Record (Medplum). Never copy PHI into analytics stores, caches, or logs.
+- De-identified research/ML data only flows **FHIR (Medplum) → DLP de-id → BigQuery → TigerGraph**.
 
 ### Starvit backend stack (authoritative)
 - Framework: **FastAPI** (OpenAPI is the contract source of truth).
@@ -28,7 +28,7 @@ Every endpoint MUST define and implement:
 ### Integration discipline
 - Any PHI read/write MUST go through the approved **FHIR integration layer**; no side channels.
 - All outbound HTTP calls must be allowlisted and time-bounded to reduce SSRF/exfiltration risk.
-- Cloud APIs must use **Cloud Run service identity** (no `GOOGLE_APPLICATION_CREDENTIALS` in Cloud Run).
+- If running on managed cloud, use workload/instance identity; never commit static creds or mount `GOOGLE_APPLICATION_CREDENTIALS` into runtime.
 
 ### Change management
 - Public contracts MUST be versioned; breaking changes require migration + deprecation plan.

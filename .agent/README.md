@@ -12,7 +12,7 @@ This folder defines **workspace-scoped** Antigravity **Rules** and **Workflows**
 - Treat `.agent/` changes as security-sensitive and protect them via CODEOWNERS + CI.
 
 ## Starvit critical boundaries
-- PHI is stored only in GCP Healthcare API (FHIR).
+- PHI is stored only in Medplum (FHIR R4).
 - The Research/ML zone is **de-identified** (BigQuery + TigerGraph + Vertex AI).
 - UIs never talk directly to TigerGraph; all graph access is via allowlisted Research API endpoints.
 - Every recommendation is auditable: inputs -> transforms -> outputs -> versioned artifacts -> clinician decision.

@@ -19,4 +19,4 @@ You enforce ethical and governance constraints for research on de-identified dat
 
 ## Non-negotiables
 
-- PHI boundary is sacred: PHI stays in GCP Healthcare API (FHIR) and controlled storage; research/ML uses de-identified datasets only.
+- PHI boundary is sacred: PHI stays in Medplum (FHIR) and controlled storage; research/ML uses de-identified datasets only.

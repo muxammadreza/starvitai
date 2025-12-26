@@ -6,7 +6,7 @@ Use when: the team is uncertain about BigQuery vs TigerGraph responsibilities, p
 
 ## Workflow
 1) Summarize constraints
-   - PHI boundary (Healthcare API only)
+   - PHI boundary (Medplum only)
    - de-ID-only analytics (BigQuery + TigerGraph)
    - no direct UI access to TigerGraph
    - target latency requirements (batch vs near real-time)
@@ -24,7 +24,7 @@ Use when: the team is uncertain about BigQuery vs TigerGraph responsibilities, p
 4) Call out feasibility traps
    - BigQuery location constraints (public datasets in US/EU; no cross-location joins)
    - VPC Service Controls restrictions
-   - schema migration constraints for Analytics → Analytics V2 streaming
+   - schema compatibility and pipeline versioning for Bulk Export and flattening
 
 5) Capture consequences and action items
    - datasets to create (env separation, location)

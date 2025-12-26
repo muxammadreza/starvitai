@@ -12,9 +12,9 @@ Design the end-to-end Starvit data plane so it is:
 - and research-ready (supports cohorting, embeddings, and feature tables).
 
 ## Authoritative architecture
-- **PHI zone**: GCP Healthcare API (FHIR R4) is the only persistent store of PHI.
+- **PHI zone**: Medplum FHIR store (FHIR R4) is the only persistent store of PHI.
 - **De-identified zone**: BigQuery (warehouse + feature tables) and TigerGraph (graph analytics) contain *only de-identified* data.
-- **Pipelines**: FHIR → (export/stream) → de-ID (DLP / Healthcare deidentify) → BigQuery → TigerGraph (+ derived feature tables).
+- **Pipelines**: FHIR → (export/stream) → de-ID (Cloud DLP) → BigQuery → TigerGraph (+ derived feature tables).
 
 ## BigQuery: when it is "worth it" (Starvit default = yes)
 Use BigQuery if **any** of the following are true (they are for Starvit):
@@ -26,7 +26,7 @@ Use BigQuery if **any** of the following are true (they are for Starvit):
 If all you ever needed was graph-native analytics and a small, fixed schema, you could consider a TigerGraph-first pipeline; Starvit is not that.
 
 ## BigQuery: exact role in Starvit
-- **Canonical de-ID analytical store** (SQL-on-FHIR, analytics_v2 schema).
+- **Canonical de-ID analytical store** (de-identified analytics tables; Starvit flattening spec).
 - **Feature/label registry**: versioned, point-in-time correct feature tables for ML.
 - **Staging surface for graph loads**: materialize node/edge tables in BigQuery, export to Cloud Storage, then load into TigerGraph.
 - **Data governance anchor**: policy tags, row-level security, auditability, retention controls.

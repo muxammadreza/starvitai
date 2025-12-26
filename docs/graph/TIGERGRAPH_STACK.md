@@ -21,7 +21,7 @@
 - (optional) `kfp` / Vertex AI SDK for pipeline orchestration
 
 ## Security conventions
-- Store TigerGraph credentials in GCP Secret Manager.
+- Store TigerGraph credentials in secret manager/vault.
 - Research API fetches credentials at runtime; never commit secrets.
 
 ## References (official)
