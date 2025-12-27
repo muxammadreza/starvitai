@@ -25,7 +25,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.39.2",
-    "@next/eslint-plugin-next": "16.1.0",
+    "@next/eslint-plugin-next": "16.1.1",
     "@starvit/typescript-config": "workspace:*",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.7",
