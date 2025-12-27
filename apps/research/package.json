@@ -31,7 +31,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
-    "@typescript-eslint/parser": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.1",
     "babel-plugin-react-native-web": "^0.21.2",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.0",
