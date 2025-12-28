@@ -35,6 +35,7 @@ Owns privacy, data minimization, consent semantics, and regulatory alignment.
 ## Medplum-specific compliance posture (use it; do not re-implement)
 - Use **AccessPolicy** and **ProjectMembership** to enforce role- and compartment-based access.
 - Ensure Medplum **AuditEvent** generation is enabled and retained.
+- Configure Medplum to minimize PHI exposure in operational logs while preserving auditability (e.g., consider `redactAuditEvents` in production).
 - Prefer storing clinical approvals inside the PHI system of record (FHIR `Task`/`Provenance`/`AuditEvent`) rather than in the app DB.
 
 ## Deliverables

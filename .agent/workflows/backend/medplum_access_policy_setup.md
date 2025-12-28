@@ -8,6 +8,8 @@ Establish least-privilege access controls in Medplum so that:
 - clinicians see only the patients they are assigned (or within an allowed org)
 - backend/bots have scoped programmatic access
 
+**Implementation rule:** All Medplum admin/config changes in this workflow MUST be performed via the configured **Medplum MCP server** (see `.agent/rules/35_medplum_mcp_mandate.md`).
+
 ## Steps
 1) Project boundaries
    - Create separate Medplum Projects per environment (`dev`, `stage`, `prod`).
@@ -18,10 +20,13 @@ Establish least-privilege access controls in Medplum so that:
      - `PatientPortalPolicy` (patient-only compartment access)
      - `ClinicianPolicy` (read/write limited clinical resource set; broad search constrained)
      - `BackendServicePolicy` (only the resource types required for computations and suggestions)
-   - Use criteria-based restrictions and compartment scoping:
-     - Patient: `Observation?_compartment=%patient` style patterns
-     - Multi-tenant org: parameterized policies with `%organization`/`%current_organization`
-   - Add writeConstraints for state transitions (e.g., lock `Observation` after `final`).
+   - Use **criteria-based restrictions** and **compartment scoping**:
+     - Patient self-access: use the built-in `%profile` variable (patient profile reference).
+       - Example: `Patient?_id=%profile.id`
+       - Example: `Observation?_compartment=%profile`
+     - Clinician scoping: prefer parameterized criteria using membership parameters (e.g., `%org`) or relationships explicitly modeled in FHIR (e.g., `Patient?general-practitioner=%profile`).
+   - Use `resource.interaction` allowlists (do not use the deprecated `readonly` field).
+   - Note: AccessPolicy criteria have practical limits (e.g., avoid chained searches and advanced modifiers); keep policies simple and testable.
 
 3) Bind policies to users/apps via ProjectMembership
    - Practitioner/Patient/RelatedPerson profiles for people.

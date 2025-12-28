@@ -6,12 +6,17 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+cd "$ROOT"
+
 python3 - <<'PY'
 import hashlib
 from pathlib import Path
 
-root = Path("/Users/mo/projects/starvitai")
-agent = root/".agent"
+root = Path.cwd()
+agent = root / ".agent"
+
+if not agent.exists():
+    raise SystemExit(".agent directory not found. Run from repo root.")
 
 def sha256_file(p: Path):
     h=hashlib.sha256()
@@ -26,7 +31,7 @@ for p in sorted(agent.rglob("*")):
     if p.is_file() and "archive" not in p.parts and p.name != "manifest.sha256":
         files.append(p)
 
-lines=[f"{sha256_file(p)}  {p.as_posix()}" for p in files]
+lines=[f"{sha256_file(p)}  {p.relative_to(root).as_posix()}" for p in files]
 (agent/"manifest.sha256").write_text("\n".join(lines)+"\n", encoding="utf-8")
 print(f"Wrote {len(lines)} entries to .agent/manifest.sha256")
 PY

@@ -44,9 +44,12 @@ Use this workflow when the Starvit backend needs a new Medplum FHIR interaction,
    - Prefer idempotent patterns:
      - conditional create/update when appropriate
      - optimistic concurrency via ETag / `meta.versionId`
-   - For multi-resource writes, prefer a FHIR transaction bundle.
+   - For multi-resource writes:
+     - default to a **FHIR batch bundle** (`Bundle.type='batch'`)
+     - only use a **FHIR transaction bundle** (`Bundle.type='transaction'`) when the `transaction-bundles` feature flag is enabled on the Medplum project and the client implements retry logic for potential `409 conflict` errors.
 
 5. **Guardrails**
+   - Medplum v5 is strict FHIR: do not rely on non-standard search modifiers such as `:in` / `:not-in`.
    - Enforce server-side authorization checks (object-level + property-level) before calling Medplum.
    - Allowlist query parameters for searches; avoid exposing broad `?_query=` patterns.
 

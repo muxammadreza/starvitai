@@ -21,8 +21,15 @@ This document is a runbook-style checklist for configuring Medplum so Starvit ca
 - For prod, configure email delivery for user onboarding and password reset.
 
 4) Secrets
-- Use Medplum Project Settings secrets for integration keys (preferred for bots).
+- Use Medplum Project Settings/secrets for integration keys (preferred for bots).
 - Never commit secrets to the repo.
+
+5) Version compatibility
+- Starvit assumes **Medplum v5.0.10+**.
+- Do not use deprecated APIs and SDK patterns (see `docs/backend/MEDPLUM_V5_COMPAT.md`).
+
+6) Administrative changes
+- All Medplum admin/config changes for Starvit MUST be performed via the configured **Medplum MCP server** (see `docs/backend/MEDPLUM_MCP_SERVER.md`).
 
 ## Required Medplum project setup
 - Create Projects per environment (`dev`, `stage`, `prod`).
@@ -31,6 +38,16 @@ This document is a runbook-style checklist for configuring Medplum so Starvit ca
   - `starvit-clinician-web` (human access)
   - `starvit-patient-mobile` (human access)
 - Define and apply AccessPolicies (see `docs/security/access-policies/`).
+
+### Project feature flags (recommended for MVP)
+Enable on the Starvit project as needed:
+- `bots` (server-side workflows)
+- `cron` (scheduled bots)
+- `transaction-bundles` (FHIR transaction bundles; beta; requires retry logic)
+
+### Project/system settings (recommended)
+- `redactAuditEvents`: consider enabling in production to reduce PHI in logs while preserving traceability.
+- Rate limit settings (`rateLimit`, `authRateLimit`) should be configured per environment.
 
 ## Starvit-side integration guardrails
 - Never log FHIR resources or raw payloads.

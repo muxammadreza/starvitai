@@ -1,0 +1,30 @@
+{
+  "resourceType": "AccessPolicy",
+  "id": "starvit-clinician-patient-scope",
+  "name": "StarvitClinicianPatientScopedPolicy",
+  "compartment": {
+    "reference": "%patient"
+  },
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "interaction": ["search", "read", "vread", "history"],
+      "criteria": "Patient?_compartment=%patient"
+    },
+    {
+      "resourceType": "Observation",
+      "interaction": ["search", "read", "vread", "history", "create", "update"],
+      "criteria": "Observation?_compartment=%patient"
+    },
+    {
+      "resourceType": "Task",
+      "interaction": ["search", "read", "vread", "history", "create", "update"],
+      "criteria": "Task?for=%patient"
+    },
+    {
+      "resourceType": "QuestionnaireResponse",
+      "interaction": ["search", "read", "vread", "history"],
+      "criteria": "QuestionnaireResponse?_compartment=%patient"
+    }
+  ]
+}

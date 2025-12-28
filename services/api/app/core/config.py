@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Tuple
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -30,8 +30,37 @@ class Settings(BaseSettings):
     # Internal Security
     STARVIT_API_KEY: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
+    # Medplum
+    MEDPLUM_BASE_URL: Optional[str] = None
+    MEDPLUM_FHIR_BASE_URL: Optional[str] = None
+    MEDPLUM_OAUTH_TOKEN_URL: Optional[str] = None
+    MEDPLUM_BACKEND_CLIENT_ID: Optional[str] = None
+    MEDPLUM_BACKEND_CLIENT_SECRET: Optional[str] = None
+    MEDPLUM_AUTH_ME_URL: Optional[str] = None
+
+    USE_SECRET_MANAGER: bool = False
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        from app.core.secrets_loader import SecretManagerSettingsSource
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            SecretManagerSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
 
 settings = Settings()

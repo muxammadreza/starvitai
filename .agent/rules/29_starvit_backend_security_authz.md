@@ -25,3 +25,8 @@ trigger: always_on
 ## Abuse prevention
 - Rate limit unauthenticated or internet-facing endpoints.
 - Apply SSRF controls for any endpoint that fetches URLs: allowlist domains, enforce timeouts, block link-local/metadata IP ranges.
+
+## Medplum integration security
+- Medplum is the PHI system of record. Do not mirror PHI into Starvit storage.
+- For Medplum admin/config changes, use the configured Medplum MCP server.
+- Medplum v5+ is strict FHIR; avoid non-standard search modifiers and deprecated Medplum resources (see `.agent/rules/36_medplum_v5_non_deprecated.md`).

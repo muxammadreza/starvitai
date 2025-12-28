@@ -18,6 +18,8 @@ If your platform does not have a native “rules/workflows” concept, treat the
 
 1. **No autonomous medical decisions.** Agents may draft suggestions; clinicians approve. Everything must be auditable.
 2. **PHI boundary is sacred.** PHI lives only in **Medplum FHIR store (FHIR R4)**. Research/ML layers use **de-identified data only**.
+   - Medplum admin/config changes MUST be performed via the configured **Medplum MCP server**.
+   - Implementation MUST be compatible with **Medplum v5.0.10+** (avoid deprecated APIs).
 3. **One backend for MVP (modular monolith).** Multiple UIs are permitted; multiple backends are not.
 4. **Every recommendation is audit-able.** Inputs → outputs → model version → clinician decision must be traceable.
 5. **TigerGraph lives only in the de-identified zone.** UI never talks to TigerGraph directly; access is via allowlisted Research API queries.

@@ -1,0 +1,21 @@
+{
+  "resourceType": "AccessPolicy",
+  "name": "StarvitPatientPortalPolicy",
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "interaction": ["read", "vread", "history"],
+      "criteria": "Patient?_id=%profile.id"
+    },
+    {
+      "resourceType": "Observation",
+      "interaction": ["search", "read", "vread", "history", "create"],
+      "criteria": "Observation?_compartment=%profile"
+    },
+    {
+      "resourceType": "Task",
+      "interaction": ["search", "read", "vread", "history"],
+      "criteria": "Task?for=%profile"
+    }
+  ]
+}

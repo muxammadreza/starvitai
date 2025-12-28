@@ -1,0 +1,38 @@
+{
+  "resourceType": "AccessPolicy",
+  "name": "StarvitBackendServicePolicy",
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "interaction": ["search", "read", "vread", "history"]
+    },
+    {
+      "resourceType": "Observation",
+      "interaction": ["search", "read", "vread", "history", "create", "update"],
+      "writeConstraint": [
+        {
+          "language": "text/fhirpath",
+          "expression": "subject.exists()"
+        },
+        {
+          "language": "text/fhirpath",
+          "expression": "code.exists() and value.exists()"
+        }
+      ]
+    },
+    {
+      "resourceType": "Task",
+      "interaction": ["search", "read", "vread", "history", "create", "update"],
+      "writeConstraint": [
+        {
+          "language": "text/fhirpath",
+          "expression": "for.exists()"
+        }
+      ]
+    },
+    {
+      "resourceType": "Provenance",
+      "interaction": ["search", "read", "create"]
+    }
+  ]
+}
