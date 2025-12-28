@@ -64,6 +64,32 @@ Do not ignore them. Instead:
 
 ## Platform interoperability
 
+## Codex (VS Code) — Agent Skills integration
+
+This repo also ships a **Codex-native skills pack** under:
+
+- `.codex/skills/`
+
+Codex loads each subdirectory containing a `SKILL.md` as a Skill. Each Starvit **rule** and **workflow** from the Antigravity pack has been re-published as a Codex Skill, plus two helpers:
+
+- `$starvit-router` — routes tasks to the correct workflow + role/rule skills.
+- `$starvit-skillpack-index` — catalog of available Starvit skills.
+
+### How to use (practical)
+
+1. Open the Starvit repo in VS Code with the Codex extension enabled.
+2. Ensure `.codex/skills/` is present at the repository root (or in the service subfolder you work in).
+3. Restart the Codex extension/session so it indexes skills.
+4. Start with:
+   - `$starvit-router`
+   - `$starvit-rule-00-nonnegotiables`
+   - one workflow skill (e.g., `$starvit-wf-00-triage-and-plan`)
+   - then the relevant role/rule skills.
+
+Codex supports explicit skill invocation with `$skill-name`, and may also choose skills implicitly when your request matches a skill’s description.
+
+
+
 Different agent tools load “project instructions” differently. To keep Starvit behavior consistent across tools:
 
 1. Treat **this** document as the canonical overview.

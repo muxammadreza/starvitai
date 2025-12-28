@@ -1,0 +1,161 @@
+version: 1
+risk_tiers:
+  tier0: Docs-only or non-functional formatting. No runtime impact.
+  tier1: Local code refactor/bugfix with no PHI/auth/data-pipeline/ML impact.
+  tier2: Touches auth/RBAC, audit logging, de-identification, datasets/features, TigerGraph
+    queries, or deployments.
+  tier3: Touches PHI boundary, FHIR access, data movement between zones, model behavior
+    affecting clinicians, or security-critical paths.
+domains:
+  frontend_clinician:
+    lead_role_rule: $starvit-rule-11-role-frontend-clinician-web
+    supporting_role_rules:
+    - $starvit-rule-13-role-uiux-design-system
+    - $starvit-rule-16-role-accessibility-qa
+    workflows:
+    - $starvit-wf-frontend-clinician-feature
+    - $starvit-wf-frontend-design-system-component
+    - $starvit-wf-frontend-add-form-rhf-zod
+    - $starvit-wf-frontend-add-table-tanstack-virtual
+    - $starvit-wf-frontend-add-chart-recharts
+    - $starvit-wf-frontend-add-rbac-guard
+    mandatory_gates:
+    - $starvit-wf-qa-accessibility-review
+    - $starvit-wf-03-security-privacy-gate
+  frontend_research_workbench:
+    lead_role_rule: $starvit-rule-20-role-frontend-research-workbench-web
+    supporting_role_rules:
+    - $starvit-rule-41-role-graph-engineering
+    workflows:
+    - $starvit-wf-frontend-research-feature-table
+    - $starvit-wf-frontend-research-graph-reactflow
+    - $starvit-wf-graph-research-api-allowlist-change
+    mandatory_gates:
+    - $starvit-wf-03-security-privacy-gate
+    - $starvit-wf-critics-threat-model
+  mobile_patient_app:
+    lead_role_rule: $starvit-rule-12-role-mobile-patient-app
+    supporting_role_rules:
+    - $starvit-rule-21-role-privacy-compliance
+    workflows:
+    - $starvit-wf-mobile-bootstrap-patient-mobile
+    - $starvit-wf-mobile-measurement-capture
+    - $starvit-wf-mobile-offline-logging-flow
+    mandatory_gates:
+    - $starvit-wf-03-security-privacy-gate
+  backend_api:
+    lead_role_rule: $starvit-rule-10-role-backend-platform
+    supporting_role_rules:
+    - $starvit-rule-31-role-observability
+    workflows:
+    - $starvit-wf-backend-bootstrap-fastapi-feature-module
+    - $starvit-wf-backend-add-api-endpoint
+    - $starvit-wf-backend-add-observability-otel
+    mandatory_gates:
+    - $starvit-wf-security-privacy-compliance-review
+    - $starvit-wf-03-security-privacy-gate
+  phi_fhir_boundary:
+    lead_role_rule: $starvit-rule-60-role-clinical-informatics-safety
+    supporting_role_rules:
+    - $starvit-rule-21-role-privacy-compliance
+    - $starvit-rule-22-role-iam-audit
+    - $starvit-rule-10-role-backend-platform
+    workflows:
+    - $starvit-wf-backend-fhir-resource-change
+    - $starvit-wf-backend-medplum-access-policy-setup
+    - $starvit-wf-backend-add-healthcare-fhir-adapter-operation
+    - $starvit-wf-security-iam-rbac-audit
+    mandatory_gates:
+    - $starvit-wf-security-privacy-compliance-review
+    - $starvit-wf-critics-clinical-safety-review
+    - $starvit-wf-critics-threat-model
+  data_plane:
+    lead_role_rule: $starvit-rule-45-role-data-platform-architect
+    supporting_role_rules:
+    - $starvit-rule-46-role-bigquery-analytics-engineer
+    - $starvit-rule-43-role-data-governance-steward
+    - $starvit-rule-42-role-data-quality
+    workflows:
+    - $starvit-wf-data-provision-bigquery-datasets-and-iam
+    - $starvit-wf-data-data-governance-deid-pipeline
+    - $starvit-wf-data-fhir-to-bigquery-export
+    - $starvit-wf-data-dbt-or-dataform-transformation-change
+    - $starvit-wf-data-dataflow-streaming-pipeline-pubsub-bigquery
+    - $starvit-wf-data-build-feature-tables
+    - $starvit-wf-data-data-quality-checks
+    - $starvit-wf-data-define-data-contracts-and-lineage
+    mandatory_gates:
+    - $starvit-wf-critics-arch-review
+    - $starvit-wf-03-security-privacy-gate
+  graph_tigergraph:
+    lead_role_rule: $starvit-rule-41-role-graph-engineering
+    supporting_role_rules:
+    - $starvit-rule-44-role-tigergraph-platform-engineering
+    - $starvit-rule-20-role-security
+    workflows:
+    - $starvit-wf-graph-design-graph-schema
+    - $starvit-wf-graph-implement-tigergraph-schema-and-loading
+    - $starvit-wf-graph-build-graph-ingestion-pipeline
+    - $starvit-wf-graph-run-gds-and-export-embeddings
+    - $starvit-wf-graph-build-graph-query-allowlist-api
+    mandatory_gates:
+    - $starvit-wf-graph-research-api-allowlist-change
+    - $starvit-wf-critics-threat-model
+  ml_ai:
+    lead_role_rule: $starvit-rule-50-role-ml-engineering
+    supporting_role_rules:
+    - $starvit-rule-52-role-model-risk-eval
+    - $starvit-rule-51-role-mlops
+    - $starvit-rule-55-role-feature-store-engineering
+    workflows:
+    - $starvit-wf-ml-train-and-register-model
+    - $starvit-wf-ml-evaluation-and-model-card
+    - $starvit-wf-ml-mlops-model-deploy
+    - $starvit-wf-ml-inference-contract-audit
+    - $starvit-wf-ml-novelty-candidate-generation
+    mandatory_gates:
+    - $starvit-wf-ml-model-risk-review
+    - $starvit-wf-03-security-privacy-gate
+    - $starvit-wf-critics-clinical-safety-review
+  security_compliance:
+    lead_role_rule: $starvit-rule-20-role-security
+    supporting_role_rules:
+    - $starvit-rule-21-role-privacy-compliance
+    - $starvit-rule-22-role-iam-audit
+    workflows:
+    - $starvit-wf-security-privacy-compliance-review
+    - $starvit-wf-security-iam-rbac-audit
+    - $starvit-wf-security-supply-chain-intake
+    - $starvit-wf-security-prompt-injection-test
+    mandatory_gates:
+    - $starvit-wf-critics-threat-model
+  docs_and_runbooks:
+    lead_role_rule: $starvit-rule-72-role-documentation
+    supporting_role_rules: []
+    workflows:
+    - $starvit-wf-docs-update-docs-and-runbooks
+    mandatory_gates: []
+  clinical_research:
+    lead_role_rule: $starvit-rule-62-role-metabolic-oncology-clinical-lead
+    supporting_role_rules:
+    - $starvit-rule-73-role-scientific-evidence-curator
+    - $starvit-rule-65-role-biostatistician-clinical-trialist
+    - $starvit-rule-66-role-regulatory-samd-cds
+    - $starvit-rule-67-role-ethics-irb-research-governance
+    - $starvit-rule-69-role-patient-safety-monitoring
+    - $starvit-rule-68-role-evolutionary-medicine-hypothesis
+    - $starvit-rule-63-role-oncology-dietitian-kmt
+    - $starvit-rule-64-role-clinical-pharmacist-repursposed-drugs
+    workflows:
+    - $starvit-wf-clinical-evidence-card
+    - $starvit-wf-clinical-living-review-update
+    - $starvit-wf-clinical-safety-signal-triage
+    - $starvit-wf-clinical-trial-protocol-spirit
+    - $starvit-wf-clinical-protocol-change
+    mandatory_gates:
+    - $starvit-wf-critics-clinical-safety-review
+    - $starvit-wf-03-security-privacy-gate
+    - $starvit-wf-critics-threat-model
+always_on_gates:
+- $starvit-wf-03-security-privacy-gate
+- $starvit-wf-04-release-readiness
