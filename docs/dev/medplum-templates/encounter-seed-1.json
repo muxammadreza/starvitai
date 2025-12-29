@@ -1,0 +1,34 @@
+{
+  "resourceType": "Encounter",
+  "meta": {
+    "project": "{{PROJECT_ID}}",
+    "tag": [
+      {
+        "system": "https://api.medplum.starvit.ca/fhir/tags",
+        "code": "dev-seed"
+      }
+    ]
+  },
+  "status": "finished",
+  "class": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+    "code": "AMB",
+    "display": "ambulatory"
+  },
+  "subject": {
+    "reference": "Patient/{{PATIENT_ONE_ID}}",
+    "display": "Patient One"
+  },
+  "participant": [
+    {
+      "individual": {
+        "reference": "Practitioner/{{CLINICIAN_PRACTITIONER_ID}}",
+        "display": "Clinician Admin"
+      }
+    }
+  ],
+  "period": {
+    "start": "2025-12-01T09:00:00Z",
+    "end": "2025-12-01T09:30:00Z"
+  }
+}

@@ -4,7 +4,7 @@
 The PHI system of record is the **Medplum FHIR R4 server**.
 
 Dev/test endpoints (self-hosted):
-- API base: https://api.medplum.starvit.ca/
+- API base: https://api.medplum.starvit.ca
 - FHIR base (expected): https://api.medplum.starvit.ca/fhir/R4
 - UI: https://app.medplum.starvit.ca/
 

@@ -3,7 +3,7 @@
 This document is a runbook-style checklist for configuring Medplum so Starvit can rely on it as the PHI system of record.
 
 ## Starvit dev endpoints
-- API: https://api.medplum.starvit.ca/
+- API: https://api.medplum.starvit.ca
 - App: https://app.medplum.starvit.ca/
 - FHIR base (expected): https://api.medplum.starvit.ca/fhir/R4
   - Verify with: `GET /fhir/R4/metadata` (should return a CapabilityStatement)

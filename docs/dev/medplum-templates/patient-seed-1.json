@@ -1,0 +1,28 @@
+{
+  "resourceType": "Patient",
+  "meta": {
+    "project": "{{PROJECT_ID}}",
+    "tag": [
+      {
+        "system": "https://api.medplum.starvit.ca/fhir/tags",
+        "code": "dev-seed"
+      }
+    ]
+  },
+  "name": [
+    {
+      "use": "official",
+      "family": "Test",
+      "given": ["Patient", "One"]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1985-04-12",
+  "active": true,
+  "generalPractitioner": [
+    {
+      "reference": "Practitioner/{{CLINICIAN_PRACTITIONER_ID}}",
+      "display": "Clinician Admin"
+    }
+  ]
+}

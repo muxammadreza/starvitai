@@ -1,0 +1,24 @@
+{
+  "resourceType": "AccessPolicy",
+  "meta": {
+    "project": "{{PROJECT_ID}}"
+  },
+  "name": "ResearcherReadOnlyPolicy",
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "criteria": "Patient?_tag=https://api.medplum.starvit.ca/fhir/tags|dev-seed",
+      "interaction": ["read", "search"]
+    },
+    {
+      "resourceType": "Observation",
+      "criteria": "Observation?_tag=https://api.medplum.starvit.ca/fhir/tags|dev-seed",
+      "interaction": ["read", "search"]
+    },
+    {
+      "resourceType": "Encounter",
+      "criteria": "Encounter?_tag=https://api.medplum.starvit.ca/fhir/tags|dev-seed",
+      "interaction": ["read", "search"]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "resourceType": "ProjectMembership",
+  "project": {
+    "reference": "Project/{{PROJECT_ID}}",
+    "display": "starvit-dev"
+  },
+  "user": {
+    "reference": "User/{{PATIENT_USER_ID}}",
+    "display": "patient.test+dev@example.com"
+  },
+  "profile": {
+    "reference": "Patient/{{PATIENT_ID}}",
+    "display": "Patient One"
+  },
+  "accessPolicy": {
+    "reference": "AccessPolicy/{{PATIENT_POLICY_ID}}",
+    "display": "PatientPortalPolicy"
+  },
+  "admin": false
+}

@@ -1,0 +1,24 @@
+{
+  "resourceType": "AccessPolicy",
+  "meta": {
+    "project": "{{PROJECT_ID}}"
+  },
+  "name": "BackendServicePolicy",
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "criteria": "Patient?_id=*",
+      "interaction": ["read", "search"]
+    },
+    {
+      "resourceType": "Observation",
+      "criteria": "Observation?_id=*",
+      "interaction": ["read", "search", "create", "update"]
+    },
+    {
+      "resourceType": "Encounter",
+      "criteria": "Encounter?_id=*",
+      "interaction": ["read", "search", "create", "update"]
+    }
+  ]
+}

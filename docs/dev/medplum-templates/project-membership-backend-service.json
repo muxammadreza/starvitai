@@ -1,0 +1,20 @@
+{
+  "resourceType": "ProjectMembership",
+  "project": {
+    "reference": "Project/{{PROJECT_ID}}",
+    "display": "starvit-dev"
+  },
+  "user": {
+    "reference": "User/{{BACKEND_USER_ID}}",
+    "display": "backend.service+dev@example.com"
+  },
+  "profile": {
+    "reference": "Practitioner/{{BACKEND_PRACTITIONER_ID}}",
+    "display": "Backend Service"
+  },
+  "accessPolicy": {
+    "reference": "AccessPolicy/{{BACKEND_POLICY_ID}}",
+    "display": "BackendServicePolicy"
+  },
+  "admin": false
+}

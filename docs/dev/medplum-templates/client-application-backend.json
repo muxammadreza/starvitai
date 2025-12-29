@@ -1,0 +1,8 @@
+{
+  "resourceType": "ClientApplication",
+  "meta": {
+    "project": "{{PROJECT_ID}}"
+  },
+  "name": "starvit-dev-backend",
+  "description": "Starvit backend server-to-server access for dev."
+}

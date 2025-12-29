@@ -1,0 +1,24 @@
+{
+  "resourceType": "AccessPolicy",
+  "meta": {
+    "project": "{{PROJECT_ID}}"
+  },
+  "name": "ClinicianPolicy",
+  "resource": [
+    {
+      "resourceType": "Patient",
+      "criteria": "Patient?general-practitioner=%profile",
+      "interaction": ["read", "search"]
+    },
+    {
+      "resourceType": "Observation",
+      "criteria": "Observation?performer=%profile",
+      "interaction": ["read", "search", "create", "update"]
+    },
+    {
+      "resourceType": "Encounter",
+      "criteria": "Encounter?participant=%profile",
+      "interaction": ["read", "search", "create", "update"]
+    }
+  ]
+}
