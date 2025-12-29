@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { MEDPLUM_ACCESS_TOKEN_COOKIE } from "../../lib/medplum-auth";
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return proxy(request, resolvedParams);
@@ -38,10 +40,16 @@ async function proxy(request: NextRequest, params: { path: string[] }) {
     const headers = new Headers(request.headers);
     headers.delete("host");
     headers.delete("connection");
+    headers.delete("cookie");
 
     const authHeader = request.headers.get("authorization");
     if (authHeader) {
-        headers.set("authorization", authHeader);
+      headers.set("authorization", authHeader);
+    } else {
+      const cookieToken = request.cookies.get(MEDPLUM_ACCESS_TOKEN_COOKIE)?.value;
+      if (cookieToken) {
+        headers.set("authorization", `Bearer ${cookieToken}`);
+      }
     }
 
     const body = request.method !== "GET" && request.method !== "HEAD" ? await request.blob() : null;

@@ -1,7 +1,15 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["STARVIT_API_INTERNAL_URL", "NEXT_PUBLIC_API_URL"],
+  "globalEnv": [
+    "STARVIT_API_INTERNAL_URL",
+    "NEXT_PUBLIC_API_URL",
+    "MEDPLUM_BASE_URL",
+    "MEDPLUM_OAUTH_TOKEN_URL",
+    "MEDPLUM_AUTH_ME_URL",
+    "MEDPLUM_FRONTEND_CLIENT_ID",
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
       "inputs": ["$TURBO_DEFAULT$"],
