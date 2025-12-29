@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import Optional
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -20,7 +21,20 @@ from app.modules.phi_gateway.fhir_writer import (
     update_measurements,
     write_measurements,
 )
-from app.modules.phi_gateway.fhir_tasks import transition_task_status
+from app.modules.phi_gateway.fhir_tasks import (
+    STARVIT_TASK_APPROVAL_REQUIRED_URL,
+    STARVIT_TASK_PROTOCOL_ID_URL,
+    STARVIT_TASK_PROTOCOL_TITLE_URL,
+    STARVIT_TASK_PROTOCOL_VERSION_URL,
+    STARVIT_TASK_RATIONALE_URL,
+    STARVIT_TASK_RECOMMENDATION_URL,
+    create_proposed_action_task,
+    get_task_decision_log,
+    list_pending_tasks,
+    transition_task_status,
+)
+from app.modules.protocols.fhir_protocols import create_protocol_definition, list_protocol_definitions
+from app.modules.protocols.protocol_definition import ProtocolDefinitionSchema
 
 logger = logging.getLogger("starvit-api")
 
@@ -289,6 +303,42 @@ class ClinicianApprovalReasonInput(BaseModel):
     reason: str | None = None
 
 
+class ProposedActionInput(BaseModel):
+    patientId: str
+    protocolDefinitionId: str
+    protocolDefinitionVersion: str
+    protocolTitle: str | None = None
+    recommendation: str
+    rationale: str | None = None
+    ownerProfile: str | None = None
+
+
+class ApprovalQueueItem(BaseModel):
+    taskId: str
+    status: str
+    patientId: str | None = None
+    protocolDefinitionId: str | None = None
+    protocolDefinitionVersion: str | None = None
+    protocolTitle: str | None = None
+    recommendation: str | None = None
+    rationale: str | None = None
+    approvalRequired: bool | None = None
+    authoredOn: str | None = None
+
+
+class ApprovalQueueResponse(BaseModel):
+    tasks: list[ApprovalQueueItem]
+    mode: str
+
+
+class ProtocolDefinitionResponse(BaseModel):
+    protocolDefinitionId: str
+    protocolId: str
+    version: str
+    status: str
+    mode: str
+
+
 @app.post("/api/clinician/approvals/{taskId}/decision")
 async def clinician_approval_decision(
     taskId: str,
@@ -305,6 +355,117 @@ async def clinician_approval_decision(
         request_id=request.state.request_id,
     )
     return {"status": "ok", "taskId": result.get("id"), "mode": settings.STARVIT_MODE}
+
+
+@app.post("/api/clinician/protocols/definitions", response_model=ProtocolDefinitionResponse)
+async def create_protocol_definition_endpoint(
+    payload: ProtocolDefinitionSchema,
+    request: Request,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    created = await create_protocol_definition(
+        schema=payload,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+    return ProtocolDefinitionResponse(
+        protocolDefinitionId=created.get("id", ""),
+        protocolId=payload.protocolId,
+        version=payload.version,
+        status=created.get("status", payload.status),
+        mode=settings.STARVIT_MODE,
+    )
+
+
+@app.get("/api/clinician/protocols/definitions")
+async def list_protocol_definitions_endpoint(
+    protocolId: Optional[str] = None,
+    version: Optional[str] = None,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    return await list_protocol_definitions(
+        protocol_id=protocolId,
+        version=version,
+        token=user.token,
+    )
+
+
+def _extract_extension(task: dict, url: str) -> Optional[str | bool]:
+    for ext in task.get("extension", []) or []:
+        if ext.get("url") == url:
+            if "valueString" in ext:
+                return ext.get("valueString")
+            if "valueBoolean" in ext:
+                return ext.get("valueBoolean")
+    return None
+
+
+@app.post("/api/clinician/approvals/propose")
+async def clinician_approval_propose(
+    payload: ProposedActionInput,
+    request: Request,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN, Role.BACKEND_SERVICE})),
+):
+    if user.role == Role.BACKEND_SERVICE:
+        if not payload.ownerProfile:
+            raise HTTPException(status_code=400, detail="ownerProfile is required for backend service proposals")
+        owner_profile = payload.ownerProfile
+    else:
+        if not user.profile:
+            raise HTTPException(status_code=400, detail="Clinician profile is required")
+        if payload.ownerProfile and payload.ownerProfile != user.profile:
+            raise HTTPException(status_code=403, detail="ownerProfile must match clinician profile")
+        owner_profile = user.profile
+
+    task = await create_proposed_action_task(
+        patient_id=payload.patientId,
+        protocol_definition_id=payload.protocolDefinitionId,
+        protocol_definition_version=payload.protocolDefinitionVersion,
+        protocol_title=payload.protocolTitle,
+        recommendation=payload.recommendation,
+        rationale=payload.rationale,
+        owner_profile=owner_profile,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+    return {"status": "proposed", "taskId": task.get("id"), "mode": settings.STARVIT_MODE}
+
+
+@app.get("/api/clinician/approvals/queue", response_model=ApprovalQueueResponse)
+async def clinician_approval_queue(
+    patientId: str | None = None,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    tasks = await list_pending_tasks(token=user.token, patient_id=patientId)
+    queue_items: list[ApprovalQueueItem] = []
+    for task in tasks:
+        patient_ref = task.get("for", {}).get("reference") if isinstance(task.get("for"), dict) else None
+        queue_items.append(
+            ApprovalQueueItem(
+                taskId=task.get("id", ""),
+                status=task.get("status", ""),
+                patientId=patient_ref,
+                protocolDefinitionId=_extract_extension(task, STARVIT_TASK_PROTOCOL_ID_URL),
+                protocolDefinitionVersion=_extract_extension(task, STARVIT_TASK_PROTOCOL_VERSION_URL),
+                protocolTitle=_extract_extension(task, STARVIT_TASK_PROTOCOL_TITLE_URL),
+                recommendation=_extract_extension(task, STARVIT_TASK_RECOMMENDATION_URL),
+                rationale=_extract_extension(task, STARVIT_TASK_RATIONALE_URL),
+                approvalRequired=_extract_extension(task, STARVIT_TASK_APPROVAL_REQUIRED_URL),
+                authoredOn=task.get("authoredOn"),
+            )
+        )
+
+    return ApprovalQueueResponse(tasks=queue_items, mode=settings.STARVIT_MODE)
+
+
+@app.get("/api/clinician/approvals/{taskId}/log")
+async def clinician_approval_log(
+    taskId: str,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    return await get_task_decision_log(task_id=taskId, token=user.token)
 
 
 @app.post("/api/clinician/approvals/{taskId}/approve")

@@ -85,13 +85,9 @@ def build_audit_event(
     event: dict = {
         "resourceType": "AuditEvent",
         "type": {
-            "coding": [
-                {
-                    "system": AUDIT_EVENT_TYPE_SYSTEM,
-                    "code": "rest",
-                    "display": "Restful Operation",
-                }
-            ]
+            "system": AUDIT_EVENT_TYPE_SYSTEM,
+            "code": "rest",
+            "display": "Restful Operation",
         },
         "action": action,
         "recorded": _now_iso(),
@@ -117,13 +113,9 @@ def build_audit_event(
     if subtype:
         event["subtype"] = [
             {
-                "coding": [
-                    {
-                        "system": AUDIT_EVENT_SUBTYPE_SYSTEM,
-                        "code": subtype,
-                        "display": description or subtype,
-                    }
-                ]
+                "system": AUDIT_EVENT_SUBTYPE_SYSTEM,
+                "code": subtype,
+                "display": description or subtype,
             }
         ]
 
