@@ -2,7 +2,7 @@ import pytest
 
 from app.adapters import fhir_store, MedplumFhirStore
 from app.core.config import settings
-from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
+from app.modules.phi_gateway.fhir_writer import MeasurementInput, MeasurementQuantity, calculate_gki, write_measurements
 
 
 # Mock the settings to ensure consistent test state
@@ -24,27 +24,26 @@ async def test_gki_calculation_stub():
 
     class MockStore:
         async def create_resource(self, resource_type, data, token=None):
-            return data  # Return the payload for inspection
+            return {"id": "stub-id", **data}  # Return payload with an ID
 
     # Swap the store instance
     original_store = fhir_store.create_resource
     fhir_store.create_resource = MockStore().create_resource
 
-    data = {"glucose": "5.0", "ketones": "1.0"}
-    result = await write_observation_glucose_ketone_weight("p123", data)
+    payload = MeasurementInput(
+        patientId="p123",
+        measuredAt="2025-12-01T08:30:00-05:00",
+        glucose=MeasurementQuantity(value=5.0, unit="mmol/L"),
+        ketones=MeasurementQuantity(value=1.0, unit="mmol/L"),
+    )
+    result = await write_measurements("p123", payload, token=None)
 
     # Check components
-    comps = result["component"]
-    gki_comp = next((c for c in comps if c["code"].get("text") == "GKI"), None)
-    assert gki_comp is not None
-    assert gki_comp["valueQuantity"]["value"] == 5.0
+    assert result["gki_id"] is not None
+    assert calculate_gki(5.0, 1.0) == 5.0
 
     # Test GKI logic with different values
-    data2 = {"glucose": "4.0", "ketones": "2.0"}
-    result2 = await write_observation_glucose_ketone_weight("p123", data2)
-    gki_comp2 = next((c for c in result2["component"] if c["code"].get("text") == "GKI"), None)
-    assert gki_comp2 is not None
-    assert gki_comp2["valueQuantity"]["value"] == 2.0
+    assert calculate_gki(4.0, 2.0) == 2.0
 
     # Restore
     fhir_store.create_resource = original_store

@@ -41,3 +41,6 @@ Dev/test endpoints (self-hosted):
 ## Validation
 - Validate units, code systems, and terminologies for Observations.
 - Treat derived metrics (e.g., GKI) as PHI and store them as Observations in the PHI zone.
+
+## Measurement mapping
+See `docs/backend/MEASUREMENT_MAPPING.md` for the canonical Observation codes, units, and provenance rules for glucose/ketone/weight and derived GKI metrics.

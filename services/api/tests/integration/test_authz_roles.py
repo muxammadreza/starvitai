@@ -21,7 +21,12 @@ def test_patient_role_allowed_and_forbidden(monkeypatch):
     # Allowed: patient measurement write
     resp = client.post(
         "/api/patient/measurements",
-        json={"patientId": "p123", "glucose": "5.1", "ketones": "1.2"},
+        json={
+            "patientId": "p123",
+            "measuredAt": "2025-12-01T08:30:00-05:00",
+            "glucose": {"value": 5.1, "unit": "mmol/L"},
+            "ketones": {"value": 1.2, "unit": "mmol/L"},
+        },
         headers=_headers("patient", "Patient/p123"),
     )
     assert resp.status_code == 200
@@ -42,7 +47,12 @@ def test_clinician_role_allowed_and_forbidden(monkeypatch):
     # Forbidden: patient-only PHI endpoint
     resp = client.post(
         "/api/patient/measurements",
-        json={"patientId": "p123", "glucose": "5.1"},
+        json={
+            "patientId": "p123",
+            "measuredAt": "2025-12-01T08:30:00-05:00",
+            "glucose": {"value": 5.1, "unit": "mmol/L"},
+            "ketones": {"value": 1.0, "unit": "mmol/L"},
+        },
         headers=_headers("clinician", "Practitioner/p1"),
     )
     assert resp.status_code == 403

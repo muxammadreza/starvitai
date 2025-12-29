@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -9,7 +9,15 @@ from pydantic import BaseModel
 from app.adapters import graph_store
 from app.core.config import settings
 from app.core.authz import Role, UserContext, require_roles
-from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
+from app.modules.phi_gateway.fhir_writer import (
+    DerivedMetricsTrendResponse,
+    MeasurementInput,
+    MeasurementWriteResponse,
+    RecentMeasurementsResponse,
+    get_gki_trend,
+    get_recent_measurements,
+    write_measurements,
+)
 
 logger = logging.getLogger("starvit-api")
 
@@ -134,36 +142,77 @@ def validate_no_phi(params: dict):
 
 
 # Patient Endpoints
-class MeasurementInput(BaseModel):
-    patientId: str
-    glucose: str | None = None
-    ketones: str | None = None
-    weight: str | None = None
-
-
-@app.post("/api/patient/measurements")
-async def post_measurements(data: MeasurementInput, user: UserContext = Depends(require_roles({Role.PATIENT}))):
-    # 1. Role Gate (Patient)
-    # Check: Does the user have a patient profile identifier?
-    # Expected format: "Patient/123" or plain ID depending on auth provider mapping
+def _resolve_patient_id(user: UserContext, requested_patient_id: str | None) -> str:
     profile = user.profile or ""
-    if settings.STARVIT_MODE == "live" and not profile:
-        raise HTTPException(status_code=403, detail="User profile missing")
 
-    # 2. Identity Binding
-    patient_id = data.patientId
     if settings.STARVIT_MODE == "live":
-        # Extract ID from "Patient/123" if present, else use as is
-        token_patient_id = profile.split("/")[-1]
+        if not profile:
+            raise HTTPException(status_code=403, detail="User profile missing")
+        return profile.split("/")[-1]
 
-        # Force the ID to match the token for safety
-        patient_id = token_patient_id
-        logger.info("Binding write for patient derived from token")
+    if requested_patient_id:
+        return requested_patient_id
 
-    result = await write_observation_glucose_ketone_weight(
-        patient_id, data.model_dump(exclude_none=True), token=user.token
+    if profile:
+        return profile.split("/")[-1]
+
+    raise HTTPException(status_code=400, detail="patientId is required")
+
+
+@app.post("/api/patient/measurements", response_model=MeasurementWriteResponse)
+async def post_measurements(data: MeasurementInput, user: UserContext = Depends(require_roles({Role.PATIENT}))):
+    patient_id = _resolve_patient_id(user, data.patientId)
+
+    result = await write_measurements(patient_id, data, token=user.token)
+
+    return MeasurementWriteResponse(
+        status="received",
+        measurementId=result["measurement_id"],
+        patientId=patient_id,
+        measuredAt=data.measuredAt,
+        observationIds={
+            "glucose": result["glucose_id"],
+            "ketones": result["ketone_id"],
+            "weight": result["weight_id"],
+        },
+        gkiObservationId=result["gki_id"],
+        mode=settings.STARVIT_MODE,
     )
-    return {"status": "received", "fhir_id": result.get("id"), "mode": settings.STARVIT_MODE}
+
+
+@app.get("/api/patient/measurements/recent", response_model=RecentMeasurementsResponse)
+async def get_recent_patient_measurements(
+    patientId: str | None = None,
+    days: int = Query(7, ge=1, le=365),
+    limit: int = Query(25, ge=1, le=200),
+    user: UserContext = Depends(require_roles({Role.PATIENT})),
+):
+    patient_id = _resolve_patient_id(user, patientId)
+    measurements = await get_recent_measurements(patient_id, token=user.token, days=days, limit=limit)
+
+    return RecentMeasurementsResponse(
+        patientId=patient_id,
+        measurements=measurements,
+        mode=settings.STARVIT_MODE,
+    )
+
+
+@app.get("/api/patient/measurements/gki", response_model=DerivedMetricsTrendResponse)
+async def get_patient_gki_trend(
+    patientId: str | None = None,
+    days: int = Query(30, ge=1, le=365),
+    limit: int = Query(100, ge=1, le=500),
+    user: UserContext = Depends(require_roles({Role.PATIENT})),
+):
+    patient_id = _resolve_patient_id(user, patientId)
+    points = await get_gki_trend(patient_id, token=user.token, days=days, limit=limit)
+
+    return DerivedMetricsTrendResponse(
+        patientId=patient_id,
+        metric="gki",
+        points=points,
+        mode=settings.STARVIT_MODE,
+    )
 
 
 # Clinician Endpoints (Stub)

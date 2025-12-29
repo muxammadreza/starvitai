@@ -83,7 +83,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementWriteResponse"
+                }
               }
             }
           },
@@ -103,6 +105,156 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/patient/measurements/recent": {
+      "get": {
+        "summary": "Get Recent Patient Measurements",
+        "operationId": "get_recent_patient_measurements_api_patient_measurements_recent_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patientid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 7,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentMeasurementsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/patient/measurements/gki": {
+      "get": {
+        "summary": "Get Patient Gki Trend",
+        "operationId": "get_patient_gki_trend_api_patient_measurements_gki_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patientid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DerivedMetricsTrendResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/clinician/patients": {
@@ -170,6 +322,80 @@
   },
   "components": {
     "schemas": {
+      "DerivedMetricPoint": {
+        "properties": {
+          "measurementId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurementid"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measuredat"
+          },
+          "gki": {
+            "$ref": "#/components/schemas/MeasurementQuantity"
+          },
+          "derivedObservationId": {
+            "type": "string",
+            "title": "Derivedobservationid"
+          },
+          "sourceObservationIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sourceobservationids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "measurementId",
+          "measuredAt",
+          "gki",
+          "derivedObservationId",
+          "sourceObservationIds"
+        ],
+        "title": "DerivedMetricPoint"
+      },
+      "DerivedMetricsTrendResponse": {
+        "properties": {
+          "patientId": {
+            "type": "string",
+            "title": "Patientid"
+          },
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/DerivedMetricPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patientId",
+          "metric",
+          "points",
+          "mode"
+        ],
+        "title": "DerivedMetricsTrendResponse"
+      },
       "GraphQuerySync": {
         "properties": {
           "query": {
@@ -206,28 +432,48 @@
         "properties": {
           "patientId": {
             "type": "string",
+            "minLength": 1,
             "title": "Patientid"
           },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measuredat"
+          },
           "glucose": {
+            "$ref": "#/components/schemas/MeasurementQuantity"
+          },
+          "ketones": {
+            "$ref": "#/components/schemas/MeasurementQuantity"
+          },
+          "weight": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/MeasurementQuantity"
               },
               {
                 "type": "null"
               }
-            ],
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "patientId",
+          "measuredAt",
+          "glucose",
+          "ketones"
+        ],
+        "title": "MeasurementInput"
+      },
+      "MeasurementObservationIds": {
+        "properties": {
+          "glucose": {
+            "type": "string",
             "title": "Glucose"
           },
           "ketones": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Ketones"
           },
           "weight": {
@@ -244,9 +490,139 @@
         },
         "type": "object",
         "required": [
-          "patientId"
+          "glucose",
+          "ketones"
         ],
-        "title": "MeasurementInput"
+        "title": "MeasurementObservationIds"
+      },
+      "MeasurementQuantity": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "unit"
+        ],
+        "title": "MeasurementQuantity"
+      },
+      "MeasurementRecord": {
+        "properties": {
+          "measurementId": {
+            "type": "string",
+            "title": "Measurementid"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measuredat"
+          },
+          "glucose": {
+            "$ref": "#/components/schemas/MeasurementQuantity"
+          },
+          "ketones": {
+            "$ref": "#/components/schemas/MeasurementQuantity"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeasurementQuantity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observationIds": {
+            "$ref": "#/components/schemas/MeasurementObservationIds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "measurementId",
+          "measuredAt",
+          "glucose",
+          "ketones",
+          "observationIds"
+        ],
+        "title": "MeasurementRecord"
+      },
+      "MeasurementWriteResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "measurementId": {
+            "type": "string",
+            "title": "Measurementid"
+          },
+          "patientId": {
+            "type": "string",
+            "title": "Patientid"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measuredat"
+          },
+          "observationIds": {
+            "$ref": "#/components/schemas/MeasurementObservationIds"
+          },
+          "gkiObservationId": {
+            "type": "string",
+            "title": "Gkiobservationid"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "measurementId",
+          "patientId",
+          "measuredAt",
+          "observationIds",
+          "gkiObservationId",
+          "mode"
+        ],
+        "title": "MeasurementWriteResponse"
+      },
+      "RecentMeasurementsResponse": {
+        "properties": {
+          "patientId": {
+            "type": "string",
+            "title": "Patientid"
+          },
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/MeasurementRecord"
+            },
+            "type": "array",
+            "title": "Measurements"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "patientId",
+          "measurements",
+          "mode"
+        ],
+        "title": "RecentMeasurementsResponse"
       },
       "ValidationError": {
         "properties": {
