@@ -1,24 +1,20 @@
 import logging
+from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Security
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
 from app.adapters import graph_store
 from app.core.config import settings
-from app.core.security import validate_jwt
+from app.core.authz import Role, UserContext, require_roles
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 
 logger = logging.getLogger("starvit-api")
 
-app = FastAPI(title="Starvit API")
-
-
-# Startup Checks
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(_: FastAPI):
     logger.info(f"Starting Starvit API in {settings.STARVIT_MODE.upper()} mode")
 
     # Key config check
@@ -33,6 +29,10 @@ async def startup_event():
 
         if not settings.TG_API_BASE or not settings.TG_API_KEY:
             raise RuntimeError("Missing TigerGraph configuration in LIVE mode")
+    yield
+
+
+app = FastAPI(title="Starvit API", lifespan=lifespan)
 
 
 ALLOWED_ORIGINS_DEV = [
@@ -82,30 +82,12 @@ def health_check():
     return {"status": "ok", "mode": settings.STARVIT_MODE}
 
 
-# Internal / Admin Security
-api_key_header = APIKeyHeader(name="X-Starvit-API-Key", auto_error=True)
-
-
-def verify_internal_api_key(api_key: str = Security(api_key_header)):
-    """
-    Verifies the internal service API key.
-    Used for admin ops or internal service-to-service calls that are not user-scoped.
-    """
-    if not settings.STARVIT_API_KEY:
-        # In prod, if key not set, this mechanism is disabled or fails safe
-        raise HTTPException(status_code=403, detail="API Key auth disabled")
-
-    if api_key != settings.STARVIT_API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    return api_key
-
-
-@app.get("/api/admin/config", dependencies=[Depends(verify_internal_api_key)])
+@app.get("/api/admin/config", dependencies=[Depends(require_roles({Role.BACKEND_SERVICE}))])
 def get_admin_config():
     return {"status": "secure_admin_access_granted", "mode": settings.STARVIT_MODE}
 
 
-@app.get("/api/admin/tigergraph/health", dependencies=[Depends(verify_internal_api_key)])
+@app.get("/api/admin/tigergraph/health", dependencies=[Depends(require_roles({Role.BACKEND_SERVICE}))])
 async def tigergraph_health_check():
     """
     Probes TigerGraph connectivity.
@@ -160,11 +142,11 @@ class MeasurementInput(BaseModel):
 
 
 @app.post("/api/patient/measurements")
-async def post_measurements(data: MeasurementInput, user: dict = Depends(validate_jwt)):
+async def post_measurements(data: MeasurementInput, user: UserContext = Depends(require_roles({Role.PATIENT}))):
     # 1. Role Gate (Patient)
     # Check: Does the user have a patient profile identifier?
     # Expected format: "Patient/123" or plain ID depending on auth provider mapping
-    profile = user.get("profile", "")
+    profile = user.profile or ""
     if settings.STARVIT_MODE == "live" and not profile:
         raise HTTPException(status_code=403, detail="User profile missing")
 
@@ -179,14 +161,14 @@ async def post_measurements(data: MeasurementInput, user: dict = Depends(validat
         logger.info("Binding write for patient derived from token")
 
     result = await write_observation_glucose_ketone_weight(
-        patient_id, data.model_dump(exclude_none=True), token=user.get("_token")
+        patient_id, data.model_dump(exclude_none=True), token=user.token
     )
     return {"status": "received", "fhir_id": result.get("id"), "mode": settings.STARVIT_MODE}
 
 
 # Clinician Endpoints (Stub)
 @app.get("/api/clinician/patients")
-def get_patients(user: dict = Depends(validate_jwt)):
+def get_patients(user: UserContext = Depends(require_roles({Role.CLINICIAN}))):
     if settings.STARVIT_MODE == "stub":
         return [{"id": "p1", "name": "Stub Patient", "mode": "stub"}]
     else:
@@ -209,11 +191,11 @@ ALLOWED_GRAPH_QUERIES = {
 
 
 @app.post("/api/research/graph/query")
-async def query_graph(q: GraphQuerySync, user: dict = Depends(validate_jwt)):
+async def query_graph(q: GraphQuerySync, user: UserContext = Depends(require_roles({Role.RESEARCH}))):
     import uuid
 
     request_id = str(uuid.uuid4())
-    user_id = user.get("sub", "unknown")
+    user_id = user.sub
 
     # 1. Allowlist Check
     if q.query not in ALLOWED_GRAPH_QUERIES:

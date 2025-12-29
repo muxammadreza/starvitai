@@ -26,7 +26,7 @@ import type {
   MeasurementInput,
 } from "./model";
 
-import { customInstance } from "../axios-instance";
+import { customInstance } from "../orval-mutator.cjs";
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**

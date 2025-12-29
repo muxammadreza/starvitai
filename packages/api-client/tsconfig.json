@@ -2,7 +2,8 @@
   "extends": "@starvit/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "allowJs": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

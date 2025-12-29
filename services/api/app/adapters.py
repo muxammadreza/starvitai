@@ -97,6 +97,62 @@ class GcpHealthcareStore(FhirStore):
                 raise e
 
 
+class MedplumFhirStore(FhirStore):
+    def __init__(self):
+        self.base_url = settings.MEDPLUM_FHIR_BASE_URL.rstrip("/") if settings.MEDPLUM_FHIR_BASE_URL else ""
+
+    async def create_resource(self, resource_type: str, data: Dict[str, Any], token: Optional[str] = None) -> Dict[str, Any]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[MedplumFhirStore STUB] POST {resource_type}")
+            return {"id": "stub-id", "resourceType": resource_type, **data, "mode": "stub"}
+
+        if not self.base_url:
+            raise NotImplementedError("Medplum FHIR base URL not configured")
+
+        if not token:
+            raise NotImplementedError("Medplum write requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.post(url, json=data, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Medplum write error: {e.response.text}")
+                raise e
+
+    async def search_resources(
+        self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[MedplumFhirStore STUB] GET {resource_type} params={search_params}")
+            return [{"resourceType": resource_type, "id": "stub-search", "mode": "stub"}]
+
+        if not self.base_url:
+            raise NotImplementedError("Medplum FHIR base URL not configured")
+
+        if not token:
+            raise NotImplementedError("Medplum search requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(url, params=search_params, headers=headers)
+                resp.raise_for_status()
+                data = resp.json()
+                if "entry" in data:
+                    return [e["resource"] for e in data["entry"]]
+                return []
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Medplum search error: {e.response.text}")
+                raise e
+
+
 class TigerGraphStore(GraphStore):
     def __init__(self):
         self.api_base = settings.TG_API_BASE
@@ -138,6 +194,6 @@ class PostgresAnalyticsStore(AnalyticsStore):
 
 
 # --- Singleton Instances ---
-fhir_store = GcpHealthcareStore()
+fhir_store = MedplumFhirStore()
 graph_store = TigerGraphStore()
 analytics_store = PostgresAnalyticsStore()

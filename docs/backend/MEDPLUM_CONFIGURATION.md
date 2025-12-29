@@ -53,3 +53,14 @@ Enable on the Starvit project as needed:
 - Never log FHIR resources or raw payloads.
 - Store “approvals” and clinical workflow artifacts in FHIR where feasible (Task/Provenance).
 - If any non-PHI event log is stored outside FHIR, it must not contain patient identifiers or clinical values.
+
+## Backend role mapping (required)
+Starvit resolves roles via Medplum ProjectMembership + AccessPolicy. Configure:
+- `MEDPLUM_AUTH_ME_URL` (e.g., `https://api.medplum.starvit.ca/auth/me`)
+- AccessPolicy identifiers (names or IDs, comma-separated):
+  - `MEDPLUM_POLICY_PATIENT`
+  - `MEDPLUM_POLICY_CLINICIAN`
+  - `MEDPLUM_POLICY_RESEARCH`
+  - `MEDPLUM_POLICY_BACKEND_SERVICE`
+
+These should map to the AccessPolicies applied to ProjectMemberships for patient/clinician/research/backend principals.

@@ -1,6 +1,10 @@
 import os
-from typing import Any, Dict, List, Tuple
-from google.cloud import secretmanager
+from typing import Any, Dict, Tuple
+
+try:
+    from google.cloud import secretmanager
+except Exception:  # pragma: no cover - dependency may be absent in local tooling
+    secretmanager = None
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 
@@ -18,6 +22,9 @@ class SecretManagerSettingsSource(PydanticBaseSettingsSource):
     @property
     def client(self):
         if self._client is None and self.use_secret_manager and self.project_id:
+            if secretmanager is None:
+                print("Warning: google-cloud-secret-manager is not installed; skipping Secret Manager.")
+                return None
             try:
                 self._client = secretmanager.SecretManagerServiceClient()
             except Exception as e:

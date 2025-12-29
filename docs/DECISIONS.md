@@ -15,3 +15,4 @@ Minimum ADR fields:
 
 ## ADR index
 - ADR-0003: BigQuery’s role in Starvit (and how it feeds TigerGraph) — `docs/decisions/ADR-0003-bigquery-role.md`
+- ADR-0004: Medplum-authenticated role mapping and backend authz — `docs/decisions/ADR-0004-medplum-authz-role-mapping.md`

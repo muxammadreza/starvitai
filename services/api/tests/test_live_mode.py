@@ -1,6 +1,6 @@
 import pytest
 
-from app.adapters import fhir_store
+from app.adapters import fhir_store, MedplumFhirStore
 from app.core.config import settings
 from app.modules.phi_gateway.fhir_writer import write_observation_glucose_ketone_weight
 
@@ -14,10 +14,8 @@ def mock_settings_stub(monkeypatch):
 @pytest.fixture
 def mock_settings_live(monkeypatch):
     monkeypatch.setattr(settings, "STARVIT_MODE", "live")
-    # Set required GCP config for live mode
-    monkeypatch.setattr(settings, "GCP_PROJECT_ID", "mock-project")
-    monkeypatch.setattr(settings, "FHIR_DATASET_ID", "mock-dataset")
-    monkeypatch.setattr(settings, "FHIR_STORE_ID", "mock-store")
+    # Set required Medplum config for live mode
+    monkeypatch.setattr(settings, "MEDPLUM_FHIR_BASE_URL", "https://api.medplum.starvit.ca/fhir/R4")
 
 
 @pytest.mark.asyncio
@@ -54,9 +52,7 @@ async def test_gki_calculation_stub():
 
 @pytest.mark.asyncio
 async def test_live_mode_requires_token(mock_settings_live):
-    from app.adapters import GcpHealthcareStore
-
-    store = GcpHealthcareStore()
+    store = MedplumFhirStore()
 
     # Should raise NotImplementedError if no token provided in live mode
     with pytest.raises(NotImplementedError):

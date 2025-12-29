@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     MEDPLUM_BACKEND_CLIENT_ID: Optional[str] = None
     MEDPLUM_BACKEND_CLIENT_SECRET: Optional[str] = None
     MEDPLUM_AUTH_ME_URL: Optional[str] = None
+    MEDPLUM_POLICY_PATIENT: str = "PatientPortalPolicy"
+    MEDPLUM_POLICY_CLINICIAN: str = "ClinicianPolicy"
+    MEDPLUM_POLICY_RESEARCH: str = "ResearcherReadOnlyPolicy"
+    MEDPLUM_POLICY_BACKEND_SERVICE: str = "BackendServicePolicy"
 
     USE_SECRET_MANAGER: bool = False
 
