@@ -28,3 +28,29 @@
 1) Create PlanDefinition → verify exists in Medplum.
 2) Propose Task → verify Task status `requested`.
 3) Approve Task → verify Task `completed` + Provenance + AuditEvent.
+
+---
+
+# Release readiness: de-identification pipeline scaffold (2025-12-29)
+
+## Preconditions
+- Tests green (pytest).
+- Security/privacy gate completed.
+
+## Rollout strategy
+- Dev/test only; no production deployment.
+- Stub blocked in `staging`/`prod` via config guard.
+
+## Migration safety
+- No schema migrations.
+- No backfill required (stub only).
+
+## Observability
+- Logs restricted to `run_id`, counts, and version metadata.
+
+## Runbooks
+- Production runbooks required before enabling Medplum → BigQuery IO.
+
+## Post-deploy verification
+1) Run synthetic fixture test → confirm output fields only from allowlist.
+2) Set `APP_ENV=prod` → confirm runtime block.

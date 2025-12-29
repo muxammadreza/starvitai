@@ -27,3 +27,37 @@ Scope: plan definitions (protocol schema), clinician approval Tasks, decision pr
 Approved with mitigations:
 - Confirm AccessPolicies include Task/Provenance/AuditEvent access scoped to clinician + patient compartments.
 - Ensure recommendation/rationale fields remain within clinician-facing systems only.
+
+---
+
+# Privacy/compliance review: de-identification pipeline scaffold
+
+Date: 2025-12-29  
+Reviewer role: Privacy + compliance  
+Scope: synthetic-only de-id transformer scaffold, boundary contract, schema proposal.
+
+## Data inventory
+- Collected fields: synthetic Observation-like fields (code, value, effective time) and pseudonymous patient key.
+- Storage location: none in stub; proposed BigQuery `analytics.deid_observations` (de-ID zone).
+- Access: stub only; production access to be governed by dataset IAM + policy tags.
+
+## Boundary enforcement
+- PHI remains in Medplum; stub has no Medplum/BigQuery IO.
+- Stub requires `APP_ENV` in `dev|test|local` and `STARVIT_MODE=stub`.
+
+## De-identification
+- Allowlisted fields only; direct identifiers are not emitted.
+- Pseudonymous `patient_key` derived within transformer boundary.
+
+## Telemetry
+- Log only `run_id`, counts, and version metadata.
+- No PHI in logs/traces.
+
+## Retention
+- Stub does not persist data.
+- Production retention to follow de-ID dataset retention policy.
+
+## Decision
+Approved with mitigations:
+- Formalize DLP policy + policy tags before any production export.
+- Require access policy review before enabling Medplum → BigQuery IO.
