@@ -26,6 +26,7 @@ Audit events are not debug logs.
 - **Medplum** is the canonical audit trail for PHI read/write activity (FHIR `AuditEvent`).
 - **Starvit** maintains a separate non-PHI operational audit trail for system events (deploys, config changes, job orchestration).
 - If cross-linking is required, link using opaque IDs (e.g., store `trace_id` as a tag/note and never embed patient identifiers).
+- AuditEvent field requirements and request correlation are specified in `docs/audit/audit-events.md`.
 
 ## Metrics
 - service-level SLIs used to compute SLOs.

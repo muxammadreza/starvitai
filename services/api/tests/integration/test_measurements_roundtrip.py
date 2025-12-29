@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from app.core.authz import Role, UserContext
 from app.modules.phi_gateway import fhir_writer
 from app.modules.phi_gateway.fhir_writer import MeasurementInput, MeasurementQuantity
 
@@ -15,6 +16,7 @@ class InMemoryFhirStore:
             "Patient": [],
             "Observation": [],
             "Provenance": [],
+            "AuditEvent": [],
         }
 
     async def create_resource(self, resource_type: str, data: dict, token=None):
@@ -24,11 +26,41 @@ class InMemoryFhirStore:
         self.storage.setdefault(resource_type, []).append(resource)
         return resource
 
+    async def read_resource(self, resource_type: str, resource_id: str, token=None):
+        for resource in self.storage.get(resource_type, []):
+            if resource.get("id") == resource_id:
+                return resource
+        return {"resourceType": resource_type, "id": resource_id}
+
+    async def update_resource(self, resource_type: str, resource_id: str, data: dict, token=None):
+        updated = dict(data)
+        updated["id"] = resource_id
+        updated["resourceType"] = resource_type
+        resources = self.storage.setdefault(resource_type, [])
+        for idx, resource in enumerate(resources):
+            if resource.get("id") == resource_id:
+                resources[idx] = updated
+                return updated
+        resources.append(updated)
+        return updated
+
     async def search_resources(self, resource_type: str, search_params: dict, token=None):
         resources = list(self.storage.get(resource_type, []))
         patient = search_params.get("patient")
         if patient:
             resources = [r for r in resources if r.get("subject", {}).get("reference") == patient]
+
+        identifier_filter = search_params.get("identifier")
+        if identifier_filter and isinstance(identifier_filter, str):
+            target_system, _, target_value = identifier_filter.partition("|")
+            resources = [
+                r
+                for r in resources
+                if any(
+                    ident.get("system") == target_system and ident.get("value") == target_value
+                    for ident in r.get("identifier", []) or []
+                )
+            ]
 
         code_filter = search_params.get("code")
         if code_filter:
@@ -80,7 +112,22 @@ async def test_measurement_roundtrip(monkeypatch):
         weight=MeasurementQuantity(value=72.4, unit="kg"),
     )
 
-    result = await fhir_writer.write_measurements(patient_id, payload, token=None)
+    actor = UserContext(
+        sub="patient-123",
+        profile=f"Patient/{patient_id}",
+        role=Role.PATIENT,
+        token="stub",
+        access_policy=None,
+        project_id=None,
+    )
+
+    result = await fhir_writer.write_measurements(
+        patient_id,
+        payload,
+        token=None,
+        actor=actor,
+        request_id="req-1",
+    )
 
     assert result["measurement_id"]
     assert result["glucose_id"]
@@ -103,3 +150,60 @@ async def test_measurement_roundtrip(monkeypatch):
     assert point.derivedObservationId == result["gki_id"]
     assert point.gki.value == round(5.2 / 1.3, 2)
     assert set(point.sourceObservationIds) == {result["glucose_id"], result["ketone_id"]}
+
+    audit_events = store.storage.get("AuditEvent", [])
+    assert audit_events
+    assert audit_events[-1]["action"] == "C"
+
+
+@pytest.mark.asyncio
+async def test_measurement_update_emits_audit(monkeypatch):
+    store = InMemoryFhirStore()
+    monkeypatch.setattr(fhir_writer, "fhir_store", store)
+
+    patient = await store.create_resource("Patient", {"resourceType": "Patient"})
+    patient_id = patient["id"]
+
+    actor = UserContext(
+        sub="patient-123",
+        profile=f"Patient/{patient_id}",
+        role=Role.PATIENT,
+        token="stub",
+        access_policy=None,
+        project_id=None,
+    )
+
+    initial = MeasurementInput(
+        patientId=patient_id,
+        measuredAt="2025-12-28T08:30:00-05:00",
+        glucose=MeasurementQuantity(value=5.0, unit="mmol/L"),
+        ketones=MeasurementQuantity(value=1.0, unit="mmol/L"),
+    )
+
+    create_result = await fhir_writer.write_measurements(
+        patient_id,
+        initial,
+        token=None,
+        actor=actor,
+        request_id="req-create",
+    )
+
+    update_payload = MeasurementInput(
+        patientId=patient_id,
+        measuredAt="2025-12-29T08:30:00-05:00",
+        glucose=MeasurementQuantity(value=6.0, unit="mmol/L"),
+        ketones=MeasurementQuantity(value=1.5, unit="mmol/L"),
+    )
+
+    update_result = await fhir_writer.update_measurements(
+        patient_id,
+        create_result["measurement_id"],
+        update_payload,
+        token=None,
+        actor=actor,
+        request_id="req-update",
+    )
+
+    assert update_result["gki_id"] is not None
+    assert len(store.storage.get("AuditEvent", [])) >= 2
+    assert store.storage["AuditEvent"][-1]["action"] == "U"

@@ -9,6 +9,8 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.adapters import fhir_store
+from app.core.authz import UserContext
+from app.modules.audit.audit_events import build_audit_event
 
 UCUM_SYSTEM = "http://unitsofmeasure.org"
 LOINC_SYSTEM = "http://loinc.org"
@@ -17,6 +19,7 @@ STARVIT_CODE_SYSTEM = "urn:starvit:observation-code"
 MEASUREMENT_GROUP_SYSTEM = "urn:starvit:measurement-group"
 STARVIT_ACTIVITY_SYSTEM = "urn:starvit:activity"
 STARVIT_AGENT_SYSTEM = "urn:starvit:agent"
+DERIVED_METRIC_TRANSFORM_VERSION = "gki-v1"
 
 
 @dataclass(frozen=True)
@@ -240,6 +243,8 @@ def _build_provenance(
     measurement_id: str,
     derived_observation_id: str,
     source_observation_ids: Iterable[str],
+    request_id: str,
+    transform_version: str,
 ) -> Dict[str, Any]:
     return {
         "resourceType": "Provenance",
@@ -275,6 +280,16 @@ def _build_provenance(
                 "use": "official",
             }
         ],
+        "extension": [
+            {
+                "url": "urn:starvit:provenance:transform-version",
+                "valueString": transform_version,
+            },
+            {
+                "url": "urn:starvit:provenance:request-id",
+                "valueString": request_id,
+            },
+        ],
     }
 
 
@@ -285,7 +300,11 @@ def calculate_gki(glucose: float, ketones: float) -> float:
 
 
 async def write_measurements(
-    patient_id: str, payload: MeasurementInput, token: Optional[str]
+    patient_id: str,
+    payload: MeasurementInput,
+    token: Optional[str],
+    actor: UserContext,
+    request_id: str,
 ) -> Dict[str, Any]:
     measurement_id = str(uuid4())
 
@@ -344,8 +363,26 @@ async def write_measurements(
         measurement_id,
         derived_observation_id=gki_id,
         source_observation_ids=[glucose_id, ketone_id],
+        request_id=request_id,
+        transform_version=DERIVED_METRIC_TRANSFORM_VERSION,
     )
-    await fhir_store.create_resource("Provenance", provenance, token=token)
+    provenance_res = await fhir_store.create_resource("Provenance", provenance, token=token)
+
+    audit_event = build_audit_event(
+        action="C",
+        actor=actor,
+        resource_refs=[
+            f"Observation/{glucose_id}",
+            f"Observation/{ketone_id}",
+            f"Observation/{gki_id}",
+            f"Provenance/{provenance_res.get('id')}",
+        ]
+        + ([f"Observation/{weight_res.get('id')}"] if weight_res else []),
+        request_id=request_id,
+        subtype="measurement-create",
+        description="Patient measurement created",
+    )
+    await fhir_store.create_resource("AuditEvent", audit_event, token=token)
 
     return {
         "measurement_id": measurement_id,
@@ -469,6 +506,144 @@ async def get_recent_measurements(
 
     records.sort(key=lambda record: record.measuredAt, reverse=True)
     return records[:limit]
+
+
+async def update_measurements(
+    patient_id: str,
+    measurement_id: str,
+    payload: MeasurementInput,
+    token: Optional[str],
+    actor: UserContext,
+    request_id: str,
+) -> Dict[str, Any]:
+    search_params = {
+        "patient": f"Patient/{patient_id}",
+        "identifier": f"{MEASUREMENT_GROUP_SYSTEM}|{measurement_id}",
+        "code": _code_search_param([GLUCOSE_CODE, KETONE_CODE, WEIGHT_CODE, GKI_CODE]),
+        "_count": "50",
+    }
+    observations = await fhir_store.search_resources("Observation", search_params, token=token)
+
+    by_code: Dict[str, Dict[str, Any]] = {}
+    for obs in observations:
+        code = _extract_code(obs)
+        if code:
+            by_code[code] = obs
+
+    glucose_obs = by_code.get(GLUCOSE_CODE.code)
+    ketone_obs = by_code.get(KETONE_CODE.code)
+    gki_obs = by_code.get(GKI_CODE.code)
+
+    if not glucose_obs or not ketone_obs:
+        raise HTTPException(status_code=404, detail="Measurement group not found")
+
+    def _apply_update(existing: Dict[str, Any], code: ObservationCode, value: float) -> Dict[str, Any]:
+        updated = dict(existing)
+        updated["effectiveDateTime"] = _to_utc_iso(payload.measuredAt)
+        updated["valueQuantity"] = _build_quantity(value, code)
+        identifiers = list(updated.get("identifier") or [])
+        if not any(
+            ident.get("system") == MEASUREMENT_GROUP_SYSTEM and ident.get("value") == measurement_id
+            for ident in identifiers
+        ):
+            identifiers.append(
+                {
+                    "system": MEASUREMENT_GROUP_SYSTEM,
+                    "value": measurement_id,
+                    "use": "official",
+                }
+            )
+        updated["identifier"] = identifiers
+        return updated
+
+    glucose_update = _apply_update(glucose_obs, GLUCOSE_CODE, payload.glucose.value)
+    ketone_update = _apply_update(ketone_obs, KETONE_CODE, payload.ketones.value)
+
+    glucose_res = await fhir_store.update_resource(
+        "Observation", glucose_obs["id"], glucose_update, token=token
+    )
+    ketone_res = await fhir_store.update_resource(
+        "Observation", ketone_obs["id"], ketone_update, token=token
+    )
+
+    weight_res: Optional[Dict[str, Any]] = None
+    if payload.weight is not None:
+        existing_weight = by_code.get(WEIGHT_CODE.code)
+        if existing_weight:
+            weight_update = _apply_update(existing_weight, WEIGHT_CODE, payload.weight.value)
+            weight_res = await fhir_store.update_resource(
+                "Observation", existing_weight["id"], weight_update, token=token
+            )
+        else:
+            weight_obs = _build_observation(
+                patient_id,
+                WEIGHT_CODE,
+                payload.measuredAt,
+                payload.weight.value,
+                measurement_id,
+            )
+            weight_res = await fhir_store.create_resource("Observation", weight_obs, token=token)
+
+    try:
+        gki_value = calculate_gki(payload.glucose.value, payload.ketones.value)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    gki_resource = gki_obs or _build_observation(
+        patient_id,
+        GKI_CODE,
+        payload.measuredAt,
+        gki_value,
+        measurement_id,
+        derived_from=[glucose_res.get("id"), ketone_res.get("id")],
+    )
+    gki_resource["effectiveDateTime"] = _to_utc_iso(payload.measuredAt)
+    gki_resource["valueQuantity"] = _build_quantity(gki_value, GKI_CODE)
+    gki_resource["derivedFrom"] = [
+        {"reference": f"Observation/{glucose_res.get('id')}"},
+        {"reference": f"Observation/{ketone_res.get('id')}"},
+    ]
+
+    if gki_obs and gki_obs.get("id"):
+        gki_res = await fhir_store.update_resource("Observation", gki_obs["id"], gki_resource, token=token)
+    else:
+        gki_res = await fhir_store.create_resource("Observation", gki_resource, token=token)
+
+    provenance = _build_provenance(
+        measurement_id,
+        derived_observation_id=gki_res.get("id"),
+        source_observation_ids=[glucose_res.get("id"), ketone_res.get("id")],
+        request_id=request_id,
+        transform_version=DERIVED_METRIC_TRANSFORM_VERSION,
+    )
+    provenance_res = await fhir_store.create_resource("Provenance", provenance, token=token)
+
+    entity_refs = [
+        f"Observation/{glucose_res.get('id')}",
+        f"Observation/{ketone_res.get('id')}",
+        f"Observation/{gki_res.get('id')}",
+        f"Provenance/{provenance_res.get('id')}",
+    ]
+    if weight_res and weight_res.get("id"):
+        entity_refs.append(f"Observation/{weight_res.get('id')}")
+
+    audit_event = build_audit_event(
+        action="U",
+        actor=actor,
+        resource_refs=entity_refs,
+        request_id=request_id,
+        subtype="measurement-update",
+        description="Patient measurement updated",
+    )
+    await fhir_store.create_resource("AuditEvent", audit_event, token=token)
+
+    return {
+        "measurement_id": measurement_id,
+        "glucose_id": glucose_res.get("id"),
+        "ketone_id": ketone_res.get("id"),
+        "weight_id": weight_res.get("id") if weight_res else None,
+        "gki_id": gki_res.get("id"),
+    }
 
 
 async def get_gki_trend(

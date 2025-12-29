@@ -2,6 +2,7 @@ import pytest
 
 from app.adapters import fhir_store, MedplumFhirStore
 from app.core.config import settings
+from app.core.authz import Role, UserContext
 from app.modules.phi_gateway.fhir_writer import MeasurementInput, MeasurementQuantity, calculate_gki, write_measurements
 
 
@@ -36,7 +37,15 @@ async def test_gki_calculation_stub():
         glucose=MeasurementQuantity(value=5.0, unit="mmol/L"),
         ketones=MeasurementQuantity(value=1.0, unit="mmol/L"),
     )
-    result = await write_measurements("p123", payload, token=None)
+    actor = UserContext(
+        sub="stub",
+        profile="Patient/p123",
+        role=Role.PATIENT,
+        token="stub",
+        access_policy=None,
+        project_id=None,
+    )
+    result = await write_measurements("p123", payload, token=None, actor=actor, request_id="req-live")
 
     # Check components
     assert result["gki_id"] is not None

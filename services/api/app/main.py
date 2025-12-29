@@ -1,4 +1,5 @@
 import logging
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -16,8 +17,10 @@ from app.modules.phi_gateway.fhir_writer import (
     RecentMeasurementsResponse,
     get_gki_trend,
     get_recent_measurements,
+    update_measurements,
     write_measurements,
 )
+from app.modules.phi_gateway.fhir_tasks import transition_task_status
 
 logger = logging.getLogger("starvit-api")
 
@@ -75,6 +78,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-Id"] = request_id
+    return response
 
 
 @app.exception_handler(NotImplementedError)
@@ -160,13 +172,56 @@ def _resolve_patient_id(user: UserContext, requested_patient_id: str | None) -> 
 
 
 @app.post("/api/patient/measurements", response_model=MeasurementWriteResponse)
-async def post_measurements(data: MeasurementInput, user: UserContext = Depends(require_roles({Role.PATIENT}))):
+async def post_measurements(
+    request: Request,
+    data: MeasurementInput,
+    user: UserContext = Depends(require_roles({Role.PATIENT})),
+):
     patient_id = _resolve_patient_id(user, data.patientId)
 
-    result = await write_measurements(patient_id, data, token=user.token)
+    result = await write_measurements(
+        patient_id,
+        data,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
 
     return MeasurementWriteResponse(
         status="received",
+        measurementId=result["measurement_id"],
+        patientId=patient_id,
+        measuredAt=data.measuredAt,
+        observationIds={
+            "glucose": result["glucose_id"],
+            "ketones": result["ketone_id"],
+            "weight": result["weight_id"],
+        },
+        gkiObservationId=result["gki_id"],
+        mode=settings.STARVIT_MODE,
+    )
+
+
+@app.put("/api/patient/measurements/{measurementId}", response_model=MeasurementWriteResponse)
+async def put_measurements(
+    measurementId: str,
+    request: Request,
+    data: MeasurementInput,
+    user: UserContext = Depends(require_roles({Role.PATIENT})),
+):
+    patient_id = _resolve_patient_id(user, data.patientId)
+
+    result = await update_measurements(
+        patient_id,
+        measurementId,
+        data,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+
+    return MeasurementWriteResponse(
+        status="updated",
         measurementId=result["measurement_id"],
         patientId=patient_id,
         measuredAt=data.measuredAt,
@@ -223,6 +278,68 @@ def get_patients(user: UserContext = Depends(require_roles({Role.CLINICIAN}))):
     else:
         # LIVE Implementation missing
         raise HTTPException(status_code=501, detail="Live patient list not implemented")
+
+
+class ClinicianApprovalDecisionInput(BaseModel):
+    decision: str
+    reason: str | None = None
+
+
+class ClinicianApprovalReasonInput(BaseModel):
+    reason: str | None = None
+
+
+@app.post("/api/clinician/approvals/{taskId}/decision")
+async def clinician_approval_decision(
+    taskId: str,
+    request: Request,
+    payload: ClinicianApprovalDecisionInput,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    result = await transition_task_status(
+        task_id=taskId,
+        decision=payload.decision,
+        reason=payload.reason,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+    return {"status": "ok", "taskId": result.get("id"), "mode": settings.STARVIT_MODE}
+
+
+@app.post("/api/clinician/approvals/{taskId}/approve")
+async def clinician_approval_approve(
+    taskId: str,
+    request: Request,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    result = await transition_task_status(
+        task_id=taskId,
+        decision="approve",
+        reason=None,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+    return {"status": "approved", "taskId": result.get("id"), "mode": settings.STARVIT_MODE}
+
+
+@app.post("/api/clinician/approvals/{taskId}/reject")
+async def clinician_approval_reject(
+    taskId: str,
+    request: Request,
+    payload: ClinicianApprovalReasonInput,
+    user: UserContext = Depends(require_roles({Role.CLINICIAN})),
+):
+    result = await transition_task_status(
+        task_id=taskId,
+        decision="reject",
+        reason=payload.reason,
+        token=user.token,
+        actor=user,
+        request_id=request.state.request_id,
+    )
+    return {"status": "rejected", "taskId": result.get("id"), "mode": settings.STARVIT_MODE}
 
 
 # Research Endpoints

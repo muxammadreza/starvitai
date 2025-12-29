@@ -17,6 +17,18 @@ class FhirStore(ABC):
         pass
 
     @abstractmethod
+    async def read_resource(
+        self, resource_type: str, resource_id: str, token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def update_resource(
+        self, resource_type: str, resource_id: str, data: Dict[str, Any], token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
     async def search_resources(
         self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None
     ) -> List[Dict[str, Any]]:
@@ -71,6 +83,50 @@ class GcpHealthcareStore(FhirStore):
                 logger.error(f"GCP Healthcare error: {e.response.text}")
                 raise e
 
+    async def read_resource(
+        self, resource_type: str, resource_id: str, token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[GcpHealthcareStore STUB] GET {resource_type}/{resource_id}")
+            return {"id": resource_id, "resourceType": resource_type, "mode": "stub"}
+
+        if not token:
+            raise NotImplementedError("GCP Healthcare API read requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}/{resource_id}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(url, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"GCP Healthcare read error: {e.response.text}")
+                raise e
+
+    async def update_resource(
+        self, resource_type: str, resource_id: str, data: Dict[str, Any], token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[GcpHealthcareStore STUB] PUT {resource_type}/{resource_id}")
+            return {"id": resource_id, "resourceType": resource_type, **data, "mode": "stub"}
+
+        if not token:
+            raise NotImplementedError("GCP Healthcare API update requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}/{resource_id}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.put(url, json=data, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"GCP Healthcare update error: {e.response.text}")
+                raise e
+
     async def search_resources(
         self, resource_type: str, search_params: Dict[str, Any], token: Optional[str] = None
     ) -> List[Dict[str, Any]]:
@@ -122,6 +178,56 @@ class MedplumFhirStore(FhirStore):
                 return resp.json()
             except httpx.HTTPStatusError as e:
                 logger.error(f"Medplum write error: {e.response.text}")
+                raise e
+
+    async def read_resource(
+        self, resource_type: str, resource_id: str, token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[MedplumFhirStore STUB] GET {resource_type}/{resource_id}")
+            return {"id": resource_id, "resourceType": resource_type, "mode": "stub"}
+
+        if not self.base_url:
+            raise NotImplementedError("Medplum FHIR base URL not configured")
+
+        if not token:
+            raise NotImplementedError("Medplum read requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}/{resource_id}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(url, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Medplum read error: {e.response.text}")
+                raise e
+
+    async def update_resource(
+        self, resource_type: str, resource_id: str, data: Dict[str, Any], token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        if settings.STARVIT_MODE == "stub":
+            logger.info(f"[MedplumFhirStore STUB] PUT {resource_type}/{resource_id}")
+            return {"id": resource_id, "resourceType": resource_type, **data, "mode": "stub"}
+
+        if not self.base_url:
+            raise NotImplementedError("Medplum FHIR base URL not configured")
+
+        if not token:
+            raise NotImplementedError("Medplum update requires user token (OAuth2)")
+
+        url = f"{self.base_url}/{resource_type}/{resource_id}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/fhir+json"}
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.put(url, json=data, headers=headers)
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Medplum update error: {e.response.text}")
                 raise e
 
     async def search_resources(
